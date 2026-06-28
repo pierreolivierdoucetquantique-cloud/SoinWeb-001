@@ -2097,6 +2097,29 @@ table.admin-table tr:hover td{ background:rgba(255,255,255,.02); }
 .hero__portal--direct{ left:38%; top:72.6%; width:24.2%; height:6.0%; }
 .hero__portal--accompagnement{ left:62.8%; top:73.2%; width:17.5%; height:5.3%; }
 
+/* Connexion / Créer un compte — même comportement que .hero__portal,
+   superposées sur les deux dragons (doré à gauche, argenté à droite)
+   qui encadrent déjà la scène. Teinte de glow accordée à chaque dragon. */
+.hero__portal--connexion:hover,
+.hero__portal--connexion:focus-visible{
+  background:rgba(227,201,138,.08);
+  box-shadow:0 0 24px 2px rgba(227,201,138,.16);
+}
+.hero__portal--connexion:focus-visible{
+  box-shadow:0 0 0 2px rgba(227,201,138,.45), 0 0 24px 4px rgba(227,201,138,.18);
+}
+.hero__portal--inscription:hover,
+.hero__portal--inscription:focus-visible{
+  background:rgba(210,225,245,.08);
+  box-shadow:0 0 24px 2px rgba(210,225,245,.16);
+}
+.hero__portal--inscription:focus-visible{
+  box-shadow:0 0 0 2px rgba(210,225,245,.45), 0 0 24px 4px rgba(210,225,245,.18);
+}
+
+.hero__portal--connexion{ left:2.99%; top:59.1%; width:14.95%; height:26.6%; }
+.hero__portal--inscription{ left:82.18%; top:59.1%; width:14.95%; height:26.6%; }
+
 /* ---------------------------------------------------------
    RESPONSIVE — nav collapse
 --------------------------------------------------------- */
