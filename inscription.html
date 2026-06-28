@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Créer un compte — Pierre-Olivier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a href="index.html" class="brand">
+    <span class="brand__mark">✦</span>
+    <span class="brand__name">Pierre-Olivier</span>
+  </a>
+  <nav class="main-nav" aria-label="Navigation principale">
+  </nav>
+  <div class="header-actions">
+    <a href="connexion.html" class="btn btn--ghost">Connexion</a>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<nav class="mobile-nav" id="mobile-nav" aria-label="Navigation mobile">
+  <a href="connexion.html">Connexion</a>
+</nav>
+
+<main class="auth">
+  <div class="auth__panel">
+    <p class="auth__eyebrow">Bienvenue</p>
+    <h1 class="auth__title">Créer un compte</h1>
+    <p class="auth__sub">Rejoignez l'espace pour réserver vos séances</p>
+
+    <div class="auth__notice" id="form-notice" hidden></div>
+
+    <form id="signup-form" novalidate>
+      <div class="field-row">
+        <div class="field">
+          <label for="firstName">Prénom</label>
+          <input type="text" id="firstName" name="firstName" autocomplete="given-name" required>
+          <span class="field__error" id="err-firstName"></span>
+        </div>
+        <div class="field">
+          <label for="lastName">Nom</label>
+          <input type="text" id="lastName" name="lastName" autocomplete="family-name" required>
+          <span class="field__error" id="err-lastName"></span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" autocomplete="email" required>
+        <span class="field__error" id="err-email"></span>
+      </div>
+
+      <div class="field">
+        <label for="age">Âge</label>
+        <input type="number" id="age" name="age" min="1" max="120" inputmode="numeric" required>
+        <span class="field__error" id="err-age"></span>
+      </div>
+
+      <div class="field field--password">
+        <label for="password">Mot de passe</label>
+        <input type="password" id="password" name="password" autocomplete="new-password" minlength="8" required>
+        <button type="button" class="field__toggle" data-toggle-for="password">Afficher</button>
+        <span class="field__error" id="err-password"></span>
+      </div>
+
+      <div class="field field--checkbox">
+        <input type="checkbox" id="age18" name="age18" required>
+        <label for="age18">J'ai 18 ans ou plus.</label>
+      </div>
+
+      <div class="field field--checkbox">
+        <input type="checkbox" id="sacredAgreement" name="sacredAgreement" required>
+        <label for="sacredAgreement">
+          J'accepte les conditions du <a href="conditions.html">Lieu Sacré</a> et m'engage à les respecter.
+        </label>
+      </div>
+
+      <button type="submit" class="auth__submit">Créer mon compte</button>
+    </form>
+
+    <p class="auth__foot" style="margin-top:24px;">
+      Déjà un compte ? <a href="connexion.html">Se connecter</a>
+    </p>
+  </div>
+</main>
+
+<script src="script.js"></script>
+<script src="auth.js"></script>
+<script src="notifications-store.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form    = document.getElementById('signup-form');
+  const notice  = document.getElementById('form-notice');
+
+  function setError(field, msg) {
+    const el = document.getElementById('err-' + field);
+    const input = document.getElementById(field);
+    if (el) el.textContent = msg || '';
+    if (input) input.classList.toggle('has-error', Boolean(msg));
+  }
+
+  function clearErrors() {
+    ['firstName','lastName','email','age','password'].forEach(f => setError(f, ''));
+  }
+
+  document.querySelectorAll('[data-toggle-for]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.toggleFor);
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      btn.textContent = showing ? 'Afficher' : 'Masquer';
+    });
+  });
+
+  poAttachPasswordValidation(document.getElementById('password'), document.getElementById('err-password'));
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    clearErrors();
+    notice.hidden = true;
+
+    const firstName = document.getElementById('firstName').value.trim();
+    const lastName  = document.getElementById('lastName').value.trim();
+    const email     = document.getElementById('email').value.trim();
+    const age       = parseInt(document.getElementById('age').value, 10);
+    const password  = document.getElementById('password').value;
+    const age18     = document.getElementById('age18').checked;
+    const sacred    = document.getElementById('sacredAgreement').checked;
+
+    let hasError = false;
+    if (!firstName) { setError('firstName', 'Champ requis.'); hasError = true; }
+    if (!lastName)  { setError('lastName', 'Champ requis.'); hasError = true; }
+    if (!email || !email.includes('@')) { setError('email', 'Email invalide.'); hasError = true; }
+    if (!age || age < 1) { setError('age', 'Âge invalide.'); hasError = true; }
+    const pwdCheck = poValidatePassword(password);
+    if (!pwdCheck.valid) { setError('password', 'Manque : ' + pwdCheck.errors.join(', ') + '.'); hasError = true; }
+    if (!age18 || !sacred) {
+      notice.hidden = false;
+      notice.dataset.tone = 'error';
+      notice.textContent = 'Vous devez confirmer avoir 18 ans ou plus et accepter les conditions du Lieu Sacré.';
+      hasError = true;
+    }
+    if (hasError) return;
+
+    const result = PO_Auth.createAccount({ firstName, lastName, email, age, password });
+    if (!result.ok) {
+      notice.hidden = false;
+      notice.dataset.tone = 'error';
+      notice.textContent = result.error;
+      return;
+    }
+
+    notice.hidden = false;
+    notice.dataset.tone = 'success';
+    notice.textContent = 'Compte créé avec succès. Redirection vers votre profil...';
+
+    if (typeof PO_Notifications !== 'undefined') {
+      PO_Notifications.logEmail({
+        type: 'registration',
+        to: result.user.email,
+        subject: 'Bienvenue sur Pierre-Olivier',
+        body: `Bonjour ${result.user.firstName},\n\nVotre compte a été créé avec succès. Vous pouvez dès maintenant réserver vos séances depuis votre espace personnel.\n\nAu service du vivant, en harmonie avec le tout.`
+      });
+    }
+
+    setTimeout(() => { window.location.href = 'profil.html'; }, 900);
+  });
+});
+</script>
+</body>
+</html>
