@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const welcomeVeil = document.getElementById('bf-welcome-veil');
 
   // ---- État de la formule sélectionnée pour cette tentative de réservation ----
-  let currentFormula = { title: SERVICE_LABEL, price: '88€', duration: '40 min' };
+  let currentFormula = { title: SERVICE_LABEL, price: poFormatPrice(88), duration: '40 min' };
   let currentMethod = 'interac';
   let currentTransactionId = null;
 
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   document.getElementById('bf-main-cta')?.addEventListener('click', () => {
-    startBooking({ title: SERVICE_LABEL, price: '88€', duration: '40 min' });
+    startBooking({ title: SERVICE_LABEL, price: poFormatPrice(88), duration: '40 min' });
   });
 
   document.getElementById('formulas-container')?.addEventListener('click', (e) => {
@@ -289,8 +289,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------------------------------------------------------
   document.getElementById('bf-start-session')?.addEventListener('click', () => {
     closeVeil(welcomeVeil);
-    // Démarrage simulé de la séance : pas de salle virtuelle réelle dans cette démo.
-    window.location.href = 'profil.html';
+    // Démarrage de la séance interactive : la garde d'accès de
+    // soin-interactif.html revérifie que cette transaction est bien confirmée.
+    window.location.href = `soin-interactif.html?tx=${encodeURIComponent(currentTransactionId || '')}`;
   });
 
 });

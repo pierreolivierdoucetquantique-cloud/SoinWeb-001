@@ -25,7 +25,8 @@ const PO_Notifications = (() => {
     appointment_reminder: 'Rappel de rendez-vous',
     appointment_cancellation: 'Annulation de rendez-vous',
     admin_message: 'Nouveau message de l\'administrateur',
-    password_reset: 'Réinitialisation de mot de passe'
+    password_reset: 'Réinitialisation de mot de passe',
+    care_session_summary: 'Résumé de séance — Soin Interactif'
   };
 
   function _read(key, fallback) {
@@ -49,11 +50,19 @@ const PO_Notifications = (() => {
         appointment_cancellation: true,
         admin_message: true,
         password_reset: true,
+        care_session_summary: true,
         pushEnabled: true
       });
     }
     if (_read(LOG_KEY, null) === null) {
       _write(LOG_KEY, []);
+    }
+    // Migration douce : si des réglages existaient déjà (avant l'ajout du
+    // type care_session_summary), on l'active par défaut sans toucher au reste.
+    const existing = _read(SETTINGS_KEY, null);
+    if (existing && existing.care_session_summary === undefined) {
+      existing.care_session_summary = true;
+      _write(SETTINGS_KEY, existing);
     }
   }
   _seed();

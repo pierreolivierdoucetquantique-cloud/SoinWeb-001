@@ -109,6 +109,12 @@
             <!-- injecté par JS -->
           </div>
         </div>
+        <div class="account-card">
+          <h3>Historique des Soins Interactifs</h3>
+          <div class="appt-list" id="care-history-list">
+            <!-- injecté par JS -->
+          </div>
+        </div>
       </section>
 
       <!-- ===================== MESSAGES ===================== -->
@@ -173,6 +179,9 @@
 <script src="script.js"></script>
 <script src="auth.js"></script>
 <script src="messenger-store.js"></script>
+<script src="care-session-store.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="care-pdf.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const user = PO_Auth.getCurrentUser();
@@ -206,24 +215,49 @@ document.addEventListener('DOMContentLoaded', () => {
     badge.hidden = count === 0;
   }
 
+  let _clientPendingAttachment = null;
+  let _clientMessengerPollTimer = null;
+  let _clientLastRenderedCount = -1;
+
+  // Rend une bulle de message avec sa pièce jointe éventuelle (même logique
+  // que côté admin, dupliquée ici car les deux pages ont des closures séparés).
+  function renderClientMessageBubble(m) {
+    const outgoing = m.sender === 'client';
+    let attachmentHtml = '';
+    if (m.attachment) {
+      const isImage = (m.attachment.type || '').startsWith('image/');
+      attachmentHtml = isImage
+        ? `<span class="messenger-bubble__attachment"><img src="${m.attachment.dataUrl}" alt="${escapeHtmlClient(m.attachment.name)}"></span>`
+        : `<span class="messenger-bubble__attachment"><a class="messenger-bubble__attachment-file" href="${m.attachment.dataUrl}" download="${escapeHtmlClient(m.attachment.name)}"><i>${(m.attachment.type || '').includes('pdf') ? '📄' : '📎'}</i>${escapeHtmlClient(m.attachment.name)}</a></span>`;
+    }
+    return `
+      <div class="messenger-bubble ${outgoing ? 'messenger-bubble--out' : 'messenger-bubble--in'}">
+        ${m.body ? escapeHtmlClient(m.body) : ''}
+        ${attachmentHtml}
+        <span class="messenger-bubble__time">${formatDateTimeShortClient(m.createdAt)}</span>
+      </div>
+    `;
+  }
+
   function renderClientMessenger() {
     PO_Messenger.markConversationSeen(user.id, 'client');
     updateClientMessengerBadge();
+    _clientPendingAttachment = null;
 
     const thread = document.getElementById('client-messenger-thread');
     const messages = PO_Messenger.listConversation(user.id);
+    _clientLastRenderedCount = messages.length;
 
     thread.innerHTML = `
       <div class="messenger-thread__head">Échanger avec Ntabou Aka Wé</div>
       <div class="messenger-thread__messages" id="client-messages-list">
-        ${messages.map(m => `
-          <div class="messenger-bubble ${m.sender === 'client' ? 'messenger-bubble--out' : 'messenger-bubble--in'}">
-            ${escapeHtmlClient(m.body)}
-            <span class="messenger-bubble__time">${formatDateTimeShortClient(m.createdAt)}</span>
-          </div>
-        `).join('') || '<p class="empty-state">Aucun message encore. Posez votre première question ci-dessous.</p>'}
+        ${messages.map(renderClientMessageBubble).join('') || '<p class="empty-state">Aucun message encore. Posez votre première question ci-dessous.</p>'}
       </div>
+      <div class="messenger-typing" id="client-typing-indicator"></div>
+      <div id="client-attachment-preview"></div>
       <form class="messenger-thread__form" id="client-messenger-send-form">
+        <button type="button" class="messenger-attach-btn" id="client-attach-btn" title="Joindre une image ou un fichier">📎</button>
+        <input type="file" id="client-file-input" accept="image/*,application/pdf" hidden>
         <input type="text" id="client-messenger-input" placeholder="Écrire un message..." autocomplete="off">
         <button type="submit">Envoyer</button>
       </form>
@@ -232,14 +266,127 @@ document.addEventListener('DOMContentLoaded', () => {
     const messagesList = document.getElementById('client-messages-list');
     messagesList.scrollTop = messagesList.scrollHeight;
 
+    const input = document.getElementById('client-messenger-input');
+    const fileInput = document.getElementById('client-file-input');
+
+    document.getElementById('client-attach-btn').addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      if (file.size > 4 * 1024 * 1024) {
+        showClientToast('Fichier trop volumineux (limite 4 Mo en simulation locale).');
+        fileInput.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        _clientPendingAttachment = { name: file.name, type: file.type, size: file.size, dataUrl: reader.result };
+        renderClientAttachmentPreview();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function renderClientAttachmentPreview() {
+      const previewEl = document.getElementById('client-attachment-preview');
+      if (!_clientPendingAttachment) { previewEl.innerHTML = ''; return; }
+      const isImage = (_clientPendingAttachment.type || '').startsWith('image/');
+      previewEl.innerHTML = `
+        <div class="messenger-attachment-preview">
+          ${isImage
+            ? `<img src="${_clientPendingAttachment.dataUrl}" alt="">`
+            : `<span class="messenger-attachment-preview__icon">📄</span>`}
+          <span class="messenger-attachment-preview__name">${escapeHtmlClient(_clientPendingAttachment.name)}</span>
+          <button type="button" class="messenger-attachment-preview__remove" id="client-attachment-remove">✕</button>
+        </div>
+      `;
+      document.getElementById('client-attachment-remove').addEventListener('click', () => {
+        _clientPendingAttachment = null;
+        fileInput.value = '';
+        renderClientAttachmentPreview();
+      });
+    }
+
+    // ---- Indicateur de frappe ----
+    let typingTimeout = null;
+    input.addEventListener('input', () => {
+      PO_Messenger.setTyping(user.id, 'client');
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => PO_Messenger.clearTyping(user.id, 'client'), 2000);
+    });
+
     document.getElementById('client-messenger-send-form').addEventListener('submit', (e) => {
       e.preventDefault();
-      const input = document.getElementById('client-messenger-input');
-      if (!input.value.trim()) return;
-      PO_Messenger.sendMessage({ clientId: user.id, sender: 'client', body: input.value });
+      const body = input.value;
+      if (!body.trim() && !_clientPendingAttachment) return;
+
+      const result = PO_Messenger.sendMessage({ clientId: user.id, sender: 'client', body, attachment: _clientPendingAttachment });
+      if (!result.ok) {
+        showClientToast(result.error);
+        return;
+      }
+
+      PO_Messenger.clearTyping(user.id, 'client');
+      clearTimeout(typingTimeout);
       input.value = '';
+      _clientPendingAttachment = null;
+      fileInput.value = '';
       renderClientMessenger();
     });
+
+    startClientMessengerPolling();
+  }
+
+  // Petite notification éphémère côté client, sans dépendre d'un composant
+  // toast partagé (cette page n'en a pas).
+  function showClientToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'auth__notice';
+    toast.dataset.tone = 'error';
+    toast.style.position = 'fixed';
+    toast.style.bottom = '24px';
+    toast.style.right = '24px';
+    toast.style.zIndex = '500';
+    toast.style.maxWidth = '320px';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3500);
+  }
+
+  // Sondage léger de la conversation : ne capte que les changements écrits
+  // dans LE MÊME navigateur (ex. l'admin ouvert dans un autre onglet du même
+  // poste). Pas de synchronisation entre deux appareils différents sans
+  // backend réel (voir l'avertissement en tête de messenger-store.js).
+  function startClientMessengerPolling() {
+    stopClientMessengerPolling();
+    _clientMessengerPollTimer = setInterval(() => {
+      const panel = document.querySelector('.account__panel[data-panel="messages"]');
+      if (!panel || panel.getAttribute('data-active') !== 'true') { stopClientMessengerPolling(); return; }
+
+      const messages = PO_Messenger.listConversation(user.id);
+      if (messages.length !== _clientLastRenderedCount) {
+        _clientLastRenderedCount = messages.length;
+        PO_Messenger.markConversationSeen(user.id, 'client');
+        updateClientMessengerBadge();
+        const list = document.getElementById('client-messages-list');
+        if (list) {
+          const wasNearBottom = (list.scrollHeight - list.scrollTop - list.clientHeight) < 60;
+          list.innerHTML = messages.map(renderClientMessageBubble).join('') || '<p class="empty-state">Aucun message encore. Posez votre première question ci-dessous.</p>';
+          if (wasNearBottom) list.scrollTop = list.scrollHeight;
+        }
+      }
+
+      const typingEl = document.getElementById('client-typing-indicator');
+      if (typingEl) {
+        typingEl.innerHTML = PO_Messenger.isTyping(user.id, 'admin')
+          ? '<span class="messenger-typing__dots"><span></span><span></span><span></span></span> Ntabou Aka Wé est en train d\'écrire...'
+          : '';
+      }
+    }, 1500);
+  }
+
+  function stopClientMessengerPolling() {
+    if (_clientMessengerPollTimer) { clearInterval(_clientMessengerPollTimer); _clientMessengerPollTimer = null; }
   }
 
   function escapeHtmlClient(str) {
@@ -307,6 +454,33 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   renderAppointments(upcoming, 'upcoming-list', 'appt-row__status--confirmed');
   renderAppointments(history, 'history-list', 'appt-row__status--done');
+
+  /* ---------- HISTORIQUE DES SOINS INTERACTIFS ---------- */
+  function renderCareHistory() {
+    const el = document.getElementById('care-history-list');
+    if (!el || typeof PO_Care === 'undefined') return;
+    const summaries = PO_Care.listSummariesForClient(user.id);
+    if (!summaries.length) {
+      el.innerHTML = '<p class="empty-state">Aucun Soin Interactif complété pour le moment.</p>';
+      return;
+    }
+    el.innerHTML = summaries.map(s => {
+      const dateStr = new Date(s.completedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+      return `
+      <div class="appt-row">
+        <span class="appt-row__date">${dateStr}</span>
+        <span class="appt-row__info"><strong>Soin Énergétique Interactif</strong><span>${s.durationMinutes} min</span></span>
+        <button type="button" class="btn btn--ghost btn--sm care-history-pdf-btn" data-summary-id="${s.id}">PDF</button>
+      </div>`;
+    }).join('');
+    el.querySelectorAll('.care-history-pdf-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const summary = PO_Care.getSummary(btn.dataset.summaryId);
+        if (summary) PO_CarePdf.generate(summary, PO_Care.getConfig().title);
+      });
+    });
+  }
+  renderCareHistory();
 
   /* ---------- PROFILE FORM ---------- */
   const profileForm   = document.getElementById('profile-form');

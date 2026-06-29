@@ -315,11 +315,95 @@ const PO_Content = (() => {
     return { ok: true, faq: page.faq[index] };
   }
 
+  // ===========================================================
+  // CONTENT MANAGER — listes dynamiques (Étapes & FAQ)
+  //
+  // Permet d'ajouter, supprimer et réordonner librement les éléments de
+  // ces deux listes, plutôt que d'être limité aux 3 éléments fixes d'origine.
+  // Toutes les fonctions sont génériques : elles fonctionnent identiquement
+  // pour "steps" et "faq" via le paramètre listKey.
+  // ===========================================================
+
+  function _getServicePageOrFail(content, serviceId) {
+    if (!content.servicePages) content.servicePages = {};
+    if (!content.servicePages[serviceId]) content.servicePages[serviceId] = {};
+    return content.servicePages[serviceId];
+  }
+
+  function addStep(serviceId, step) {
+    const content = getSiteContent();
+    const page = _getServicePageOrFail(content, serviceId);
+    if (!Array.isArray(page.steps)) page.steps = [];
+    page.steps.push({ title: (step && step.title) || 'Nouvelle étape', text: (step && step.text) || '' });
+    _write(SITE_CONTENT_KEY, content);
+    return { ok: true, steps: page.steps };
+  }
+
+  function removeStep(serviceId, index) {
+    const content = getSiteContent();
+    const page = _getServicePageOrFail(content, serviceId);
+    if (!Array.isArray(page.steps) || !page.steps[index]) {
+      return { ok: false, error: 'Étape introuvable.' };
+    }
+    page.steps.splice(index, 1);
+    _write(SITE_CONTENT_KEY, content);
+    return { ok: true, steps: page.steps };
+  }
+
+  // direction : -1 pour monter, +1 pour descendre.
+  function moveStep(serviceId, index, direction) {
+    const content = getSiteContent();
+    const page = _getServicePageOrFail(content, serviceId);
+    const steps = page.steps;
+    const target = index + direction;
+    if (!Array.isArray(steps) || target < 0 || target >= steps.length) {
+      return { ok: false, error: 'Déplacement impossible.' };
+    }
+    [steps[index], steps[target]] = [steps[target], steps[index]];
+    _write(SITE_CONTENT_KEY, content);
+    return { ok: true, steps };
+  }
+
+  function addFaqItem(serviceId, faq) {
+    const content = getSiteContent();
+    const page = _getServicePageOrFail(content, serviceId);
+    if (!Array.isArray(page.faq)) page.faq = [];
+    page.faq.push({ question: (faq && faq.question) || 'Nouvelle question', answer: (faq && faq.answer) || '' });
+    _write(SITE_CONTENT_KEY, content);
+    return { ok: true, faq: page.faq };
+  }
+
+  function removeFaqItem(serviceId, index) {
+    const content = getSiteContent();
+    const page = _getServicePageOrFail(content, serviceId);
+    if (!Array.isArray(page.faq) || !page.faq[index]) {
+      return { ok: false, error: 'Question introuvable.' };
+    }
+    page.faq.splice(index, 1);
+    _write(SITE_CONTENT_KEY, content);
+    return { ok: true, faq: page.faq };
+  }
+
+  function moveFaqItem(serviceId, index, direction) {
+    const content = getSiteContent();
+    const page = _getServicePageOrFail(content, serviceId);
+    const faq = page.faq;
+    const target = index + direction;
+    if (!Array.isArray(faq) || target < 0 || target >= faq.length) {
+      return { ok: false, error: 'Déplacement impossible.' };
+    }
+    [faq[index], faq[target]] = [faq[target], faq[index]];
+    _write(SITE_CONTENT_KEY, content);
+    return { ok: true, faq };
+  }
+
   return {
     listServices, getService, updateService,
     listFormulas, listFormulasForService, saveFormula, deleteFormula,
     getSiteContent, updateThreshold, updateServicesIntro, updateServiceCard,
     updateBrand, updateSharedLabels,
-    getServicePageContent, updateServicePageContent, updateServiceStep, updateServiceFaq
+    getServicePageContent, updateServicePageContent, updateServiceStep, updateServiceFaq,
+    addStep, removeStep, moveStep,
+    addFaqItem, removeFaqItem, moveFaqItem
   };
 })();

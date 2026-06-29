@@ -27,8 +27,9 @@
       <button data-panel="calendar"><i>◷</i><span>Calendrier</span></button>
       <button data-panel="content"><i>✎</i><span>Contenu</span></button>
       <button data-panel="services"><i>◈</i><span>Services</span></button>
-      <button data-panel="pricing"><i>€</i><span>Tarifs</span></button>
+      <button data-panel="pricing"><i>$</i><span>Tarifs</span></button>
       <button data-panel="payments"><i>⛁</i><span>Paiements</span><span class="sidebar-badge" id="payments-badge" hidden>0</span></button>
+      <button data-panel="care"><i>🜂</i><span>Soin Interactif</span></button>
       <button data-panel="messenger"><i>✉</i><span>Messagerie</span><span class="sidebar-badge" id="messenger-badge" hidden>0</span></button>
       <button data-panel="notifications"><i>♢</i><span>Notifications</span></button>
       <button data-panel="analytics"><i>▲</i><span>Statistiques</span></button>
@@ -296,37 +297,33 @@
             </div>
           </div>
 
-          <h4 style="margin:22px 0 14px; font-family:var(--serif); font-size:1rem;">Étape I</h4>
-          <div class="field"><label>Titre</label><input type="text" id="cm-sp-step0-title"></div>
-          <div class="field"><label>Texte</label><input type="text" id="cm-sp-step0-text"></div>
-
-          <h4 style="margin:22px 0 14px; font-family:var(--serif); font-size:1rem;">Étape II</h4>
-          <div class="field"><label>Titre</label><input type="text" id="cm-sp-step1-title"></div>
-          <div class="field"><label>Texte</label><input type="text" id="cm-sp-step1-text"></div>
-
-          <h4 style="margin:22px 0 14px; font-family:var(--serif); font-size:1rem;">Étape III</h4>
-          <div class="field"><label>Titre</label><input type="text" id="cm-sp-step2-title"></div>
-          <div class="field"><label>Texte</label><input type="text" id="cm-sp-step2-text"></div>
-
           <h4 style="margin:26px 0 14px; font-family:var(--serif); font-size:1rem;">Bande d'appel à l'action</h4>
           <div class="field"><label>Titre</label><input type="text" id="cm-sp-cta-title"></div>
           <div class="field"><label>Texte</label><input type="text" id="cm-sp-cta-text"></div>
           <div class="field"><label>Texte du bouton</label><input type="text" id="cm-sp-cta-button"></div>
 
-          <h4 style="margin:26px 0 14px; font-family:var(--serif); font-size:1rem;">Question FAQ 1</h4>
-          <div class="field"><label>Question</label><input type="text" id="cm-sp-faq0-q"></div>
-          <div class="field"><label>Réponse</label><input type="text" id="cm-sp-faq0-a"></div>
-
-          <h4 style="margin:22px 0 14px; font-family:var(--serif); font-size:1rem;">Question FAQ 2</h4>
-          <div class="field"><label>Question</label><input type="text" id="cm-sp-faq1-q"></div>
-          <div class="field"><label>Réponse</label><input type="text" id="cm-sp-faq1-a"></div>
-
-          <h4 style="margin:22px 0 14px; font-family:var(--serif); font-size:1rem;">Question FAQ 3</h4>
-          <div class="field"><label>Question</label><input type="text" id="cm-sp-faq2-q"></div>
-          <div class="field"><label>Réponse</label><input type="text" id="cm-sp-faq2-a"></div>
-
           <button type="submit" class="auth__submit" style="max-width:260px;">Enregistrer cette page</button>
         </form>
+      </div>
+
+      <!-- ----- Étapes ("Comment se déroule") — liste dynamique ----- -->
+      <div class="account-card">
+        <div class="cm-list-header">
+          <h3>Étapes — Comment se déroule</h3>
+          <button type="button" class="btn btn--gold btn--sm" id="cm-add-step">+ Ajouter une étape</button>
+        </div>
+        <p class="muted-note">S'applique à la page de service sélectionnée ci-dessus.</p>
+        <div id="cm-steps-list" class="cm-block-list"></div>
+      </div>
+
+      <!-- ----- FAQ — liste dynamique ----- -->
+      <div class="account-card">
+        <div class="cm-list-header">
+          <h3>FAQ — Avant de réserver</h3>
+          <button type="button" class="btn btn--gold btn--sm" id="cm-add-faq">+ Ajouter une question</button>
+        </div>
+        <p class="muted-note">S'applique à la page de service sélectionnée ci-dessus.</p>
+        <div id="cm-faq-list" class="cm-block-list"></div>
       </div>
 
     </section>
@@ -411,6 +408,71 @@
       <div class="admin-empty" id="payments-empty" hidden>Aucune transaction pour le moment.</div>
     </section>
 
+    <!-- ===================== SOIN INTERACTIF (SIMULATION) ===================== -->
+    <section class="admin-panel" data-panel="care">
+      <div class="admin-header">
+        <div>
+          <h1>Soin Interactif</h1>
+          <p>Configuration de la plateforme de soin qui suit le paiement du Soin Direct</p>
+        </div>
+      </div>
+
+      <div class="auth__notice" data-tone="error" style="margin-bottom:22px;">
+        Simulation frontend : aucune validation côté serveur n'existe ici. La garde d'accès
+        (paiement requis avant d'entrer dans le soin) est vérifiée dans le navigateur du
+        visiteur et peut être contournée via les DevTools. Voir l'avertissement complet dans
+        care-session-store.js avant toute mise en production avec de vrais clients.
+      </div>
+
+      <!-- ----- Réglages généraux ----- -->
+      <div class="account-card">
+        <h3>Réglages généraux</h3>
+        <div class="auth__notice" id="care-settings-notice" hidden></div>
+        <form id="care-settings-form">
+          <div class="field">
+            <label>Titre du soin</label>
+            <input type="text" id="care-cfg-title">
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Prix (CAD)</label>
+              <input type="number" id="care-cfg-price" min="0" step="0.01">
+            </div>
+            <div class="field">
+              <label>Durée (minutes)</label>
+              <input type="number" id="care-cfg-duration" min="1" step="1">
+            </div>
+          </div>
+          <button type="submit" class="auth__submit" style="max-width:220px;">Enregistrer</button>
+        </form>
+      </div>
+
+      <!-- ----- Étapes de la séance ----- -->
+      <div class="account-card">
+        <div class="cm-list-header">
+          <h3>Étapes de la séance</h3>
+          <button type="button" class="btn btn--gold btn--sm" id="care-add-step">+ Ajouter une étape</button>
+        </div>
+        <p class="muted-note">Glissez les flèches pour réordonner. Les types "Respiration", "Visualisation" et "Intégration silencieuse" affichent un minuteur d'étape ; "Questionnaire" exige une réponse avant de continuer.</p>
+        <div id="care-steps-list" class="cm-block-list"></div>
+      </div>
+
+      <!-- ----- Séances complétées ----- -->
+      <div class="account-card">
+        <h3>Séances complétées</h3>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Client</th><th>Date</th><th>Durée</th><th>Référence</th><th>PDF</th></tr>
+            </thead>
+            <tbody id="care-summaries-tbody"></tbody>
+          </table>
+        </div>
+        <div class="admin-empty" id="care-summaries-empty" hidden>Aucune séance complétée pour le moment.</div>
+      </div>
+
+    </section>
+
     <!-- ===================== MESSENGER ===================== -->
     <section class="admin-panel" data-panel="messenger">
       <div class="admin-header">
@@ -488,7 +550,7 @@
           <div class="admin-stat__label">Taux d'annulation</div>
         </div>
         <div class="admin-stat">
-          <div class="admin-stat__value" id="an-stat-revenue">0€</div>
+          <div class="admin-stat__value" id="an-stat-revenue">0,00 $ CAD</div>
           <div class="admin-stat__label">Revenu estimé (RDV confirmés/terminés)</div>
         </div>
       </div>
@@ -702,8 +764,8 @@
       </div>
       <div class="field-row">
         <div class="field">
-          <label for="formula-price">Prix (€)</label>
-          <input type="number" id="formula-price" min="0" step="1" required>
+          <label for="formula-price">Prix (CAD)</label>
+          <input type="number" id="formula-price" min="0" step="0.01" required>
         </div>
         <div class="field">
           <label for="formula-duration">Durée</label>
@@ -756,6 +818,9 @@
 <script src="content-store.js"></script>
 <script src="messenger-store.js"></script>
 <script src="notifications-store.js"></script>
+<script src="care-session-store.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="care-pdf.js"></script>
 <script src="admin.js"></script>
 </body>
 </html>

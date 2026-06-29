@@ -2,6 +2,23 @@
 // PIERRE-OLIVIER — interactions
 // =========================================================
 
+// ----- FORMATAGE DES PRIX (CAD, convention québécoise) -----
+// Toujours afficher les montants au format "88,00 $ CAD" : virgule décimale,
+// symbole $ après le nombre, suffixe CAD. N'accepte qu'un nombre, ou une
+// chaîne représentant intégralement un nombre (espaces de bord tolérés,
+// virgule ou point comme séparateur décimal). Toute autre valeur — texte
+// libre comme "3×75 min", ou déjà un montant formaté — est retournée telle
+// quelle plutôt que d'être mal interprétée par un parsing trop permissif.
+function poFormatPrice(value) {
+  if (typeof value !== 'number' && typeof value !== 'string') return String(value);
+  const trimmed = typeof value === 'string' ? value.trim() : value;
+  const isPureNumber = typeof trimmed === 'number' || /^-?\d+([.,]\d+)?$/.test(trimmed);
+  if (!isPureNumber) return String(value);
+  const num = typeof trimmed === 'number' ? trimmed : parseFloat(trimmed.replace(',', '.'));
+  if (Number.isNaN(num)) return String(value);
+  return num.toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' $ CAD';
+}
+
 // ----- POLITIQUE DE MOT DE PASSE (globale, réutilisée par inscription.html et profil.html) -----
 // Règles : 8 caractères minimum, 1 majuscule, 1 chiffre.
 function poValidatePassword(password) {
@@ -106,28 +123,34 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ---------- FAQ ACCORDION ---------- */
-  document.querySelectorAll('.faq-item').forEach(item => {
-    const q = item.querySelector('.faq-item__q');
-    const a = item.querySelector('.faq-item__a');
-    q?.addEventListener('click', () => {
-      const isOpen = item.getAttribute('data-open') === 'true';
-      // close siblings within the same faq block
-      item.closest('.faq')?.querySelectorAll('.faq-item').forEach(sib => {
-        if (sib !== item) {
-          sib.setAttribute('data-open', 'false');
-          const sibA = sib.querySelector('.faq-item__a');
-          if (sibA) sibA.style.maxHeight = null;
+  function attachFaqAccordion(scopeEl) {
+    const scope = scopeEl || document;
+    scope.querySelectorAll('.faq-item').forEach(item => {
+      const q = item.querySelector('.faq-item__q');
+      const a = item.querySelector('.faq-item__a');
+      q?.addEventListener('click', () => {
+        const isOpen = item.getAttribute('data-open') === 'true';
+        // close siblings within the same faq block
+        item.closest('.faq')?.querySelectorAll('.faq-item').forEach(sib => {
+          if (sib !== item) {
+            sib.setAttribute('data-open', 'false');
+            const sibA = sib.querySelector('.faq-item__a');
+            if (sibA) sibA.style.maxHeight = null;
+          }
+        });
+        if (isOpen) {
+          item.setAttribute('data-open', 'false');
+          a.style.maxHeight = null;
+        } else {
+          item.setAttribute('data-open', 'true');
+          a.style.maxHeight = a.scrollHeight + 'px';
         }
       });
-      if (isOpen) {
-        item.setAttribute('data-open', 'false');
-        a.style.maxHeight = null;
-      } else {
-        item.setAttribute('data-open', 'true');
-        a.style.maxHeight = a.scrollHeight + 'px';
-      }
     });
-  });
+  }
+  attachFaqAccordion(); // FAQ statiques éventuelles (ex. page d'accueil) ; les FAQ
+                         // générées dynamiquement plus bas rappellent cette fonction
+                         // elles-mêmes une fois injectées dans le DOM.
 
   /* ---------- DYNAMIC SITE CONTENT (Content Manager) — homepage only ---------- */
   if (typeof PO_Content !== 'undefined' && document.getElementById('threshold-title')) {
@@ -177,16 +200,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (stepsEyebrowEl && page.stepsEyebrow) stepsEyebrowEl.textContent = page.stepsEyebrow;
         if (stepsTitleEl && page.stepsTitle) stepsTitleEl.textContent = page.stepsTitle;
 
-        if (Array.isArray(page.steps)) {
-          document.querySelectorAll('#steps-container [data-step-index]').forEach(stepEl => {
-            const idx = Number(stepEl.dataset.stepIndex);
-            const data = page.steps[idx];
-            if (!data) return;
-            const titleEl = stepEl.querySelector('[data-step-title]');
-            const textEl = stepEl.querySelector('[data-step-text]');
-            if (titleEl && data.title) titleEl.textContent = data.title;
-            if (textEl && data.text) textEl.textContent = data.text;
-          });
+        const stepsContainer = document.getElementById('steps-container');
+        if (stepsContainer && Array.isArray(page.steps)) {
+          const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+          stepsContainer.innerHTML = page.steps.map((s, i) => `
+            <div class="step" data-step-index="${i}">
+              <p class="step__num">${ROMAN[i] || (i + 1)}.</p>
+              <h3 data-step-title>${escapeHtmlGlobal(s.title)}</h3>
+              <p data-step-text>${escapeHtmlGlobal(s.text)}</p>
+            </div>
+          `).join('');
         }
 
         const ctaTitleEl = document.getElementById('cta-title');
@@ -196,16 +219,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ctaTextEl && page.ctaText) ctaTextEl.textContent = page.ctaText;
         if (ctaButtonEl && page.ctaButtonLabel) ctaButtonEl.textContent = page.ctaButtonLabel;
 
-        if (Array.isArray(page.faq)) {
-          document.querySelectorAll('#faq-container [data-faq-index]').forEach(faqEl => {
-            const idx = Number(faqEl.dataset.faqIndex);
-            const data = page.faq[idx];
-            if (!data) return;
-            const qEl = faqEl.querySelector('[data-faq-question]');
-            const aEl = faqEl.querySelector('[data-faq-answer]');
-            if (qEl && data.question) qEl.textContent = data.question;
-            if (aEl && data.answer) aEl.textContent = data.answer;
-          });
+        const faqContainer = document.getElementById('faq-container');
+        if (faqContainer && Array.isArray(page.faq)) {
+          faqContainer.innerHTML = page.faq.map((f, i) => `
+            <div class="faq-item" data-open="false" data-faq-index="${i}">
+              <button class="faq-item__q"><span data-faq-question>${escapeHtmlGlobal(f.question)}</span><i>+</i></button>
+              <div class="faq-item__a"><p data-faq-answer>${escapeHtmlGlobal(f.answer)}</p></div>
+            </div>
+          `).join('');
+          attachFaqAccordion(faqContainer);
         }
       }
 
@@ -240,13 +262,13 @@ document.addEventListener('DOMContentLoaded', () => {
           ${f.featured ? '<span class="formula-card__badge">Le plus choisi</span>' : ''}
           <h3>${escapeHtmlGlobal(f.title)}</h3>
           <div class="formula-card__meta">
-            <span class="formula-card__price">${f.price}€</span>
+            <span class="formula-card__price">${poFormatPrice(f.price)}</span>
             <span class="formula-card__duration">/ ${escapeHtmlGlobal(f.duration)}</span>
           </div>
           <p>${escapeHtmlGlobal(f.description)}</p>
           <span class="formula-card__note">Tarif d'exemple — modifiable</span>
           ${serviceId === 'soins-direct'
-            ? `<button type="button" class="btn btn--accent bf-formula-btn" data-formula-title="${escapeHtmlGlobal(f.title)}" data-formula-price="${f.price}€" data-formula-duration="${escapeHtmlGlobal(f.duration)}">Réserver</button>`
+            ? `<button type="button" class="btn btn--accent bf-formula-btn" data-formula-title="${escapeHtmlGlobal(f.title)}" data-formula-price="${poFormatPrice(f.price)}" data-formula-duration="${escapeHtmlGlobal(f.duration)}">Réserver</button>`
             : (serviceId === 'services-energetiques' || serviceId === 'accompagnement')
               ? `<button type="button" class="btn btn--accent cal-formula-btn" data-formula-title="${escapeHtmlGlobal(f.title)}" data-formula-duration="${escapeHtmlGlobal(f.duration)}">Réserver</button>`
               : `<a href="connexion.html?redirect=${redirectParam}" class="btn btn--accent">Réserver</a>`

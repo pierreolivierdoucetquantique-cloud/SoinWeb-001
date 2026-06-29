@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (panelId === 'calendar') renderCalendar();
     if (panelId === 'pricing') renderPricing();
     if (panelId === 'payments') renderPayments();
+    if (panelId === 'care') renderCare();
     if (panelId === 'services') renderServices();
     if (panelId === 'content') renderContent();
     if (panelId === 'messenger') renderMessenger();
@@ -791,7 +792,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const avgPrice = formulas.reduce((sum, f) => sum + f.price, 0) / formulas.length;
       totalRevenue += avgPrice;
     });
-    document.getElementById('an-stat-revenue').textContent = Math.round(totalRevenue) + '€';
+    document.getElementById('an-stat-revenue').textContent = formatPrice(totalRevenue);
 
     // ----- Répartition par service -----
     const serviceBreakdown = document.getElementById('an-service-breakdown');
@@ -978,8 +979,17 @@ document.addEventListener('DOMContentLoaded', () => {
     badge.hidden = count === 0;
   }
 
+  let _pendingAttachment = null; // pièce jointe en attente d'envoi pour la conversation ouverte
+  let _messengerPollTimer = null;
+  let _lastRenderedMessageCount = {}; // clientId -> nombre de messages au dernier rendu, pour ne réafficher le thread que si quelque chose a changé
+
   function renderMessenger() {
     updateMessengerBadge();
+    renderConversationList();
+    startMessengerPolling();
+  }
+
+  function renderConversationList() {
     const listEl = document.getElementById('messenger-conv-list');
     const summary = PO_Messenger.listConversationsSummary();
     const clients = PO_Auth.listClients();
@@ -993,13 +1003,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const client = clients.find(c => c.id === s.clientId);
       const name = client ? `${client.firstName} ${client.lastName}` : 'Client supprimé';
       const isActive = s.clientId === _activeConversationClientId;
+      const previewText = s.lastMessage.body || (s.lastMessage.attachment ? '📎 ' + s.lastMessage.attachment.name : '');
       return `
         <div class="messenger-list__item" data-client-id="${s.clientId}" data-active="${isActive}">
           <div class="messenger-list__item-top">
             <span class="messenger-list__name">${escapeHtml(name)}</span>
             ${s.unreadByAdmin ? '<span class="messenger-list__unread"></span>' : ''}
           </div>
-          <span class="messenger-list__preview">${escapeHtml(s.lastMessage.body)}</span>
+          <span class="messenger-list__preview">${escapeHtml(previewText)}</span>
         </div>
       `;
     }).join('');
@@ -1007,15 +1018,91 @@ document.addEventListener('DOMContentLoaded', () => {
     listEl.querySelectorAll('[data-client-id]').forEach(item => {
       item.addEventListener('click', () => openConversation(item.dataset.clientId));
     });
+  }
 
-    // Si une conversation était déjà ouverte, la rafraîchir (sans perdre la sélection)
-    if (_activeConversationClientId) {
-      openConversation(_activeConversationClientId, { skipMarkSeen: false });
+  // Sondage léger : revérifie périodiquement s'il y a de nouveaux messages ou
+  // un signal de frappe, et rafraîchit l'affichage seulement si nécessaire.
+  // SIMULATION FRONTEND : ceci ne capte que les changements écrits dans LE
+  // MÊME navigateur (ex. un autre onglet ouvert sur profil.html). Un vrai
+  // temps réel entre deux appareils différents demanderait un canal serveur
+  // (ex. Supabase Realtime / WebSocket).
+  function startMessengerPolling() {
+    stopMessengerPolling();
+    _messengerPollTimer = setInterval(() => {
+      const panel = document.querySelector('.admin-panel[data-panel="messenger"]');
+      if (!panel || panel.getAttribute('data-active') !== 'true') { stopMessengerPolling(); return; }
+
+      const summary = PO_Messenger.listConversationsSummary();
+      const totalMessages = summary.reduce((sum, s) => sum + s.total, 0);
+      if (totalMessages !== _lastRenderedMessageCount.__total) {
+        _lastRenderedMessageCount.__total = totalMessages;
+        renderConversationList();
+        updateMessengerBadge();
+      }
+
+      if (_activeConversationClientId) {
+        refreshActiveThreadIfChanged();
+        refreshTypingIndicator();
+      }
+    }, 1500);
+  }
+
+  function stopMessengerPolling() {
+    if (_messengerPollTimer) { clearInterval(_messengerPollTimer); _messengerPollTimer = null; }
+  }
+
+  function refreshActiveThreadIfChanged() {
+    const clientId = _activeConversationClientId;
+    const messages = PO_Messenger.listConversation(clientId);
+    if (_lastRenderedMessageCount[clientId] === messages.length) return;
+    _lastRenderedMessageCount[clientId] = messages.length;
+    PO_Messenger.markConversationSeen(clientId, 'admin');
+    renderThreadMessages(clientId, messages);
+  }
+
+  function refreshTypingIndicator() {
+    const el = document.getElementById('messenger-typing-indicator');
+    if (!el) return;
+    const clientId = _activeConversationClientId;
+    el.innerHTML = PO_Messenger.isTyping(clientId, 'client')
+      ? '<span class="messenger-typing__dots"><span></span><span></span><span></span></span> en train d\'écrire...'
+      : '';
+  }
+
+  function renderThreadMessages(clientId, messages) {
+    const list = document.getElementById('messenger-messages-list');
+    if (!list) return;
+    const wasNearBottom = (list.scrollHeight - list.scrollTop - list.clientHeight) < 60;
+    list.innerHTML = messages.map(m => renderMessageBubble(m, 'admin')).join('') || '<p class="empty-state">Aucun message encore.</p>';
+    if (wasNearBottom) list.scrollTop = list.scrollHeight;
+  }
+
+  // Rend une bulle de message, avec sa pièce jointe éventuelle (image affichée
+  // en aperçu, autre fichier affiché comme lien de téléchargement "data:").
+  function renderMessageBubble(m, viewerRole) {
+    const outgoing = m.sender === viewerRole;
+    const attachmentHtml = m.attachment ? renderAttachmentHtml(m.attachment) : '';
+    return `
+      <div class="messenger-bubble ${outgoing ? 'messenger-bubble--out' : 'messenger-bubble--in'}">
+        ${m.body ? escapeHtml(m.body) : ''}
+        ${attachmentHtml}
+        <span class="messenger-bubble__time">${formatDateTimeShort(m.createdAt)}</span>
+      </div>
+    `;
+  }
+
+  function renderAttachmentHtml(attachment) {
+    const isImage = (attachment.type || '').startsWith('image/');
+    if (isImage) {
+      return `<span class="messenger-bubble__attachment"><img src="${attachment.dataUrl}" alt="${escapeHtml(attachment.name)}"></span>`;
     }
+    const icon = (attachment.type || '').includes('pdf') ? '📄' : '📎';
+    return `<span class="messenger-bubble__attachment"><a class="messenger-bubble__attachment-file" href="${attachment.dataUrl}" download="${escapeHtml(attachment.name)}"><i>${icon}</i>${escapeHtml(attachment.name)}</a></span>`;
   }
 
   function openConversation(clientId) {
     _activeConversationClientId = clientId;
+    _pendingAttachment = null;
     PO_Messenger.markConversationSeen(clientId, 'admin');
 
     const clients = PO_Auth.listClients();
@@ -1032,18 +1119,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const thread = document.getElementById('messenger-thread');
     const messages = PO_Messenger.listConversation(clientId);
+    _lastRenderedMessageCount[clientId] = messages.length;
 
     thread.innerHTML = `
       <div class="messenger-thread__head">${escapeHtml(name)}</div>
       <div class="messenger-thread__messages" id="messenger-messages-list">
-        ${messages.map(m => `
-          <div class="messenger-bubble ${m.sender === 'admin' ? 'messenger-bubble--out' : 'messenger-bubble--in'}">
-            ${escapeHtml(m.body)}
-            <span class="messenger-bubble__time">${formatDateTimeShort(m.createdAt)}</span>
-          </div>
-        `).join('') || '<p class="empty-state">Aucun message encore.</p>'}
+        ${messages.map(m => renderMessageBubble(m, 'admin')).join('') || '<p class="empty-state">Aucun message encore.</p>'}
       </div>
+      <div class="messenger-typing" id="messenger-typing-indicator"></div>
+      <div id="messenger-attachment-preview"></div>
       <form class="messenger-thread__form" id="messenger-send-form">
+        <button type="button" class="messenger-attach-btn" id="messenger-attach-btn" title="Joindre une image ou un fichier">📎</button>
+        <input type="file" id="messenger-file-input" accept="image/*,application/pdf" hidden>
         <input type="text" id="messenger-input" placeholder="Écrire un message..." autocomplete="off">
         <button type="submit">Envoyer</button>
       </form>
@@ -1052,12 +1139,68 @@ document.addEventListener('DOMContentLoaded', () => {
     const messagesList = document.getElementById('messenger-messages-list');
     messagesList.scrollTop = messagesList.scrollHeight;
 
+    const messengerInput = document.getElementById('messenger-input');
+    const fileInput = document.getElementById('messenger-file-input');
+
+    document.getElementById('messenger-attach-btn').addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      if (file.size > 4 * 1024 * 1024) {
+        showToast('Fichier trop volumineux (limite 4 Mo en simulation locale).', 'error');
+        fileInput.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        _pendingAttachment = { name: file.name, type: file.type, size: file.size, dataUrl: reader.result };
+        renderAttachmentPreview();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function renderAttachmentPreview() {
+      const previewEl = document.getElementById('messenger-attachment-preview');
+      if (!_pendingAttachment) { previewEl.innerHTML = ''; return; }
+      const isImage = (_pendingAttachment.type || '').startsWith('image/');
+      previewEl.innerHTML = `
+        <div class="messenger-attachment-preview">
+          ${isImage
+            ? `<img src="${_pendingAttachment.dataUrl}" alt="">`
+            : `<span class="messenger-attachment-preview__icon">📄</span>`}
+          <span class="messenger-attachment-preview__name">${escapeHtml(_pendingAttachment.name)}</span>
+          <button type="button" class="messenger-attachment-preview__remove" id="messenger-attachment-remove">✕</button>
+        </div>
+      `;
+      document.getElementById('messenger-attachment-remove').addEventListener('click', () => {
+        _pendingAttachment = null;
+        fileInput.value = '';
+        renderAttachmentPreview();
+      });
+    }
+
+    // ---- Indicateur de frappe : signale à l'autre partie qu'on écrit ----
+    let typingTimeout = null;
+    messengerInput.addEventListener('input', () => {
+      PO_Messenger.setTyping(clientId, 'admin');
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => PO_Messenger.clearTyping(clientId, 'admin'), 2000);
+    });
+
     document.getElementById('messenger-send-form').addEventListener('submit', (e) => {
       e.preventDefault();
-      const input = document.getElementById('messenger-input');
-      const body = input.value;
-      if (!body.trim()) return;
-      PO_Messenger.sendMessage({ clientId, sender: 'admin', body });
+      const body = messengerInput.value;
+      if (!body.trim() && !_pendingAttachment) return;
+
+      const result = PO_Messenger.sendMessage({ clientId, sender: 'admin', body, attachment: _pendingAttachment });
+      if (!result.ok) {
+        showToast(result.error, 'error');
+        return;
+      }
+
+      PO_Messenger.clearTyping(clientId, 'admin');
+      clearTimeout(typingTimeout);
 
       if (typeof PO_Notifications !== 'undefined') {
         const allClients = PO_Auth.listClients();
@@ -1067,13 +1210,16 @@ document.addEventListener('DOMContentLoaded', () => {
             type: 'admin_message',
             to: targetClient.email,
             subject: 'Nouveau message de Ntabou Aka Wé',
-            body: `Bonjour ${targetClient.firstName},\n\nVous avez reçu un nouveau message :\n\n"${body.trim()}"\n\nConnectez-vous à votre espace personnel pour répondre.`
+            body: `Bonjour ${targetClient.firstName},\n\nVous avez reçu un nouveau message${_pendingAttachment ? ' avec une pièce jointe' : ''} :\n\n"${body.trim() || '(pièce jointe)'}"\n\nConnectez-vous à votre espace personnel pour répondre.`
           });
         }
       }
 
-      input.value = '';
-      renderMessenger();
+      messengerInput.value = '';
+      _pendingAttachment = null;
+      fileInput.value = '';
+      renderAttachmentPreview();
+      renderConversationList();
       openConversation(clientId);
     });
   }
@@ -1155,21 +1301,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cm-sp-steps-eyebrow').value = page.stepsEyebrow || '';
     document.getElementById('cm-sp-steps-title').value = page.stepsTitle || '';
 
-    for (let i = 0; i < 3; i++) {
-      const step = (page.steps && page.steps[i]) || {};
-      document.getElementById(`cm-sp-step${i}-title`).value = step.title || '';
-      document.getElementById(`cm-sp-step${i}-text`).value = step.text || '';
-    }
-
     document.getElementById('cm-sp-cta-title').value = page.ctaTitle || '';
     document.getElementById('cm-sp-cta-text').value = page.ctaText || '';
     document.getElementById('cm-sp-cta-button').value = page.ctaButtonLabel || '';
 
-    for (let i = 0; i < 3; i++) {
-      const faq = (page.faq && page.faq[i]) || {};
-      document.getElementById(`cm-sp-faq${i}-q`).value = faq.question || '';
-      document.getElementById(`cm-sp-faq${i}-a`).value = faq.answer || '';
-    }
+    renderStepsList();
+    renderFaqList();
   }
 
   document.getElementById('content-service-filter').addEventListener('change', renderServicePageForm);
@@ -1178,30 +1315,13 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const serviceId = document.getElementById('content-service-filter').value;
 
-    const steps = [];
-    for (let i = 0; i < 3; i++) {
-      steps.push({
-        title: document.getElementById(`cm-sp-step${i}-title`).value.trim(),
-        text: document.getElementById(`cm-sp-step${i}-text`).value.trim()
-      });
-    }
-    const faq = [];
-    for (let i = 0; i < 3; i++) {
-      faq.push({
-        question: document.getElementById(`cm-sp-faq${i}-q`).value.trim(),
-        answer: document.getElementById(`cm-sp-faq${i}-a`).value.trim()
-      });
-    }
-
     PO_Content.updateServicePageContent(serviceId, {
       intro: document.getElementById('cm-sp-intro').value.trim(),
       stepsEyebrow: document.getElementById('cm-sp-steps-eyebrow').value.trim(),
       stepsTitle: document.getElementById('cm-sp-steps-title').value.trim(),
-      steps,
       ctaTitle: document.getElementById('cm-sp-cta-title').value.trim(),
       ctaText: document.getElementById('cm-sp-cta-text').value.trim(),
-      ctaButtonLabel: document.getElementById('cm-sp-cta-button').value.trim(),
-      faq
+      ctaButtonLabel: document.getElementById('cm-sp-cta-button').value.trim()
     });
 
     const notice = document.getElementById('service-page-notice');
@@ -1209,6 +1329,128 @@ document.addEventListener('DOMContentLoaded', () => {
     notice.dataset.tone = 'success';
     notice.textContent = 'Page de service mise à jour. Visible sur cet appareil après rechargement de la page publique (simulation locale — voir le rappel en haut du panneau Paiements pour le détail des limites).';
     setTimeout(() => { notice.hidden = true; }, 3500);
+  });
+
+  /* ---- Étapes ("Comment se déroule") — liste dynamique ---- */
+  function renderStepsList() {
+    const serviceId = document.getElementById('content-service-filter').value;
+    const page = PO_Content.getServicePageContent(serviceId) || {};
+    const steps = Array.isArray(page.steps) ? page.steps : [];
+    const list = document.getElementById('cm-steps-list');
+
+    if (!steps.length) {
+      list.innerHTML = '<p class="cm-block-empty">Aucune étape pour le moment. Utilisez "+ Ajouter une étape".</p>';
+      return;
+    }
+
+    list.innerHTML = steps.map((s, i) => `
+      <div class="cm-block-item" data-step-row="${i}">
+        <div class="cm-block-item__order">
+          <button type="button" data-step-up="${i}" ${i === 0 ? 'disabled' : ''} title="Monter">↑</button>
+          <button type="button" data-step-down="${i}" ${i === steps.length - 1 ? 'disabled' : ''} title="Descendre">↓</button>
+        </div>
+        <div class="cm-block-item__fields">
+          <input type="text" data-step-field="title" data-step-idx="${i}" value="${escapeHtml(s.title)}" placeholder="Titre de l'étape">
+          <textarea rows="2" data-step-field="text" data-step-idx="${i}" placeholder="Texte de l'étape">${escapeHtml(s.text)}</textarea>
+        </div>
+        <button type="button" class="cm-block-item__remove" data-step-remove="${i}" title="Supprimer cette étape">✕</button>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('[data-step-field]').forEach(input => {
+      input.addEventListener('change', () => {
+        const idx = Number(input.dataset.stepIdx);
+        const field = input.dataset.stepField;
+        PO_Content.updateServiceStep(serviceId, idx, { [field]: input.value.trim() });
+      });
+    });
+    list.querySelectorAll('[data-step-up]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        PO_Content.moveStep(serviceId, Number(btn.dataset.stepUp), -1);
+        renderStepsList();
+      });
+    });
+    list.querySelectorAll('[data-step-down]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        PO_Content.moveStep(serviceId, Number(btn.dataset.stepDown), 1);
+        renderStepsList();
+      });
+    });
+    list.querySelectorAll('[data-step-remove]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        askConfirm('Supprimer cette étape ?', 'Elle disparaîtra de la page publique après rechargement.', () => {
+          PO_Content.removeStep(serviceId, Number(btn.dataset.stepRemove));
+          renderStepsList();
+        });
+      });
+    });
+  }
+
+  document.getElementById('cm-add-step').addEventListener('click', () => {
+    const serviceId = document.getElementById('content-service-filter').value;
+    PO_Content.addStep(serviceId, { title: 'Nouvelle étape', text: '' });
+    renderStepsList();
+  });
+
+  /* ---- FAQ — liste dynamique ---- */
+  function renderFaqList() {
+    const serviceId = document.getElementById('content-service-filter').value;
+    const page = PO_Content.getServicePageContent(serviceId) || {};
+    const faq = Array.isArray(page.faq) ? page.faq : [];
+    const list = document.getElementById('cm-faq-list');
+
+    if (!faq.length) {
+      list.innerHTML = '<p class="cm-block-empty">Aucune question pour le moment. Utilisez "+ Ajouter une question".</p>';
+      return;
+    }
+
+    list.innerHTML = faq.map((f, i) => `
+      <div class="cm-block-item" data-faq-row="${i}">
+        <div class="cm-block-item__order">
+          <button type="button" data-faq-up="${i}" ${i === 0 ? 'disabled' : ''} title="Monter">↑</button>
+          <button type="button" data-faq-down="${i}" ${i === faq.length - 1 ? 'disabled' : ''} title="Descendre">↓</button>
+        </div>
+        <div class="cm-block-item__fields">
+          <input type="text" data-faqitem-field="question" data-faqitem-idx="${i}" value="${escapeHtml(f.question)}" placeholder="Question">
+          <textarea rows="2" data-faqitem-field="answer" data-faqitem-idx="${i}" placeholder="Réponse">${escapeHtml(f.answer)}</textarea>
+        </div>
+        <button type="button" class="cm-block-item__remove" data-faqitem-remove="${i}" title="Supprimer cette question">✕</button>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('[data-faqitem-field]').forEach(input => {
+      input.addEventListener('change', () => {
+        const idx = Number(input.dataset.faqitemIdx);
+        const field = input.dataset.faqitemField;
+        PO_Content.updateServiceFaq(serviceId, idx, { [field]: input.value.trim() });
+      });
+    });
+    list.querySelectorAll('[data-faq-up]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        PO_Content.moveFaqItem(serviceId, Number(btn.dataset.faqUp), -1);
+        renderFaqList();
+      });
+    });
+    list.querySelectorAll('[data-faq-down]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        PO_Content.moveFaqItem(serviceId, Number(btn.dataset.faqDown), 1);
+        renderFaqList();
+      });
+    });
+    list.querySelectorAll('[data-faqitem-remove]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        askConfirm('Supprimer cette question ?', 'Elle disparaîtra de la page publique après rechargement.', () => {
+          PO_Content.removeFaqItem(serviceId, Number(btn.dataset.faqitemRemove));
+          renderFaqList();
+        });
+      });
+    });
+  }
+
+  document.getElementById('cm-add-faq').addEventListener('click', () => {
+    const serviceId = document.getElementById('content-service-filter').value;
+    PO_Content.addFaqItem(serviceId, { question: 'Nouvelle question', answer: '' });
+    renderFaqList();
   });
 
   /* =========================================================
@@ -1300,7 +1542,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <tr>
         <td>${f.order}</td>
         <td>${escapeHtml(f.title)}</td>
-        <td>${f.price}€</td>
+        <td>${formatPrice(f.price)}</td>
         <td>${escapeHtml(f.duration)}</td>
         <td>${f.featured ? '<span class="badge badge--confirmed">Oui</span>' : '—'}</td>
         <td>
@@ -1505,6 +1747,156 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* =========================================================
+     SOIN INTERACTIF (SIMULATION) — voir l'avertissement complet
+     dans care-session-store.js.
+  ========================================================= */
+  const CARE_TYPE_LABELS = {
+    texte: 'Texte', respiration: 'Respiration guidée', questionnaire: 'Questionnaire',
+    visualisation: 'Visualisation', pause: 'Intégration silencieuse'
+  };
+
+  function renderCare() {
+    if (typeof PO_Care === 'undefined') return;
+    const cfg = PO_Care.getConfig();
+    document.getElementById('care-cfg-title').value = cfg.title || '';
+    document.getElementById('care-cfg-price').value = cfg.price ?? '';
+    document.getElementById('care-cfg-duration').value = cfg.durationMinutes ?? '';
+    renderCareStepsList();
+    renderCareSummaries();
+  }
+
+  document.getElementById('care-settings-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    PO_Care.updateConfig({
+      title: document.getElementById('care-cfg-title').value.trim(),
+      price: Number(document.getElementById('care-cfg-price').value) || 0,
+      durationMinutes: Number(document.getElementById('care-cfg-duration').value) || 40
+    });
+    const notice = document.getElementById('care-settings-notice');
+    notice.hidden = false;
+    notice.dataset.tone = 'success';
+    notice.textContent = 'Réglages enregistrés. Le prix affiché sur "Soins Direct" reste cependant géré par le module Tarifs — pensez à l\'aligner si besoin.';
+    setTimeout(() => { notice.hidden = true; }, 3500);
+  });
+
+  function renderCareStepsList() {
+    const cfg = PO_Care.getConfig();
+    const steps = cfg.steps || [];
+    const list = document.getElementById('care-steps-list');
+
+    if (!steps.length) {
+      list.innerHTML = '<p class="cm-block-empty">Aucune étape pour le moment. Utilisez "+ Ajouter une étape".</p>';
+      return;
+    }
+
+    const typeOptions = Object.keys(CARE_TYPE_LABELS)
+      .map(k => `<option value="${k}">${CARE_TYPE_LABELS[k]}</option>`).join('');
+
+    list.innerHTML = steps.map((s, i) => `
+      <div class="cm-block-item" data-care-step-row="${i}">
+        <div class="cm-block-item__order">
+          <button type="button" data-care-step-up="${s.id}" ${i === 0 ? 'disabled' : ''} title="Monter">↑</button>
+          <button type="button" data-care-step-down="${s.id}" ${i === steps.length - 1 ? 'disabled' : ''} title="Descendre">↓</button>
+        </div>
+        <div class="cm-block-item__fields">
+          <select data-care-step-field="type" data-care-step-id="${s.id}">${typeOptions}</select>
+          <input type="text" data-care-step-field="title" data-care-step-id="${s.id}" value="${escapeHtml(s.title)}" placeholder="Titre de l'étape">
+          <textarea rows="2" data-care-step-field="body" data-care-step-id="${s.id}" placeholder="Texte affiché au client">${escapeHtml(s.body)}</textarea>
+          ${(s.type === 'respiration' || s.type === 'visualisation' || s.type === 'pause') ? `
+            <div class="field" style="max-width:200px;">
+              <label>Durée du minuteur (secondes)</label>
+              <input type="number" min="5" step="5" data-care-step-field="durationSeconds" data-care-step-id="${s.id}" value="${s.durationSeconds || 60}">
+            </div>` : ''}
+          ${s.type === 'questionnaire' ? `
+            <div class="field">
+              <label>Question</label>
+              <input type="text" data-care-step-field="question" data-care-step-id="${s.id}" value="${escapeHtml(s.question || '')}">
+            </div>
+            <div class="field">
+              <label>Options de réponse (une par ligne)</label>
+              <textarea rows="3" data-care-step-field="options" data-care-step-id="${s.id}">${escapeHtml((s.options || []).join('\n'))}</textarea>
+            </div>` : ''}
+        </div>
+        <button type="button" class="cm-block-item__remove" data-care-step-remove="${s.id}" title="Supprimer cette étape">✕</button>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('select[data-care-step-field="type"]').forEach(sel => {
+      sel.value = steps.find(s => s.id === sel.dataset.careStepId)?.type || 'texte';
+      sel.addEventListener('change', () => {
+        PO_Care.saveStep({ id: sel.dataset.careStepId, type: sel.value });
+        renderCareStepsList();
+      });
+    });
+    list.querySelectorAll('[data-care-step-field]:not(select)').forEach(input => {
+      input.addEventListener('change', () => {
+        const field = input.dataset.careStepField;
+        let value = input.value;
+        if (field === 'durationSeconds') value = Number(value) || 60;
+        if (field === 'options') value = value.split('\n').map(v => v.trim()).filter(Boolean);
+        PO_Care.saveStep({ id: input.dataset.careStepId, [field]: value });
+      });
+    });
+    list.querySelectorAll('[data-care-step-up]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        PO_Care.moveStep(btn.dataset.careStepUp, -1);
+        renderCareStepsList();
+      });
+    });
+    list.querySelectorAll('[data-care-step-down]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        PO_Care.moveStep(btn.dataset.careStepDown, 1);
+        renderCareStepsList();
+      });
+    });
+    list.querySelectorAll('[data-care-step-remove]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        askConfirm('Supprimer cette étape ?', 'Elle disparaîtra de la séance pour les prochains clients.', () => {
+          PO_Care.removeStep(btn.dataset.careStepRemove);
+          renderCareStepsList();
+        });
+      });
+    });
+  }
+
+  document.getElementById('care-add-step')?.addEventListener('click', () => {
+    PO_Care.saveStep({ type: 'texte', title: 'Nouvelle étape', body: '' });
+    renderCareStepsList();
+  });
+
+  function renderCareSummaries() {
+    const summaries = PO_Care.listAllSummaries();
+    const tbody = document.getElementById('care-summaries-tbody');
+    const emptyEl = document.getElementById('care-summaries-empty');
+
+    if (!summaries.length) {
+      tbody.innerHTML = '';
+      emptyEl.hidden = false;
+      return;
+    }
+    emptyEl.hidden = true;
+
+    tbody.innerHTML = summaries.map(s => `
+      <tr>
+        <td>${escapeHtml(s.clientName || '—')}</td>
+        <td>${formatDateShort(s.completedAt.slice(0, 10))}</td>
+        <td>${s.durationMinutes} min</td>
+        <td>${escapeHtml(s.transactionId || '—')}</td>
+        <td><button class="icon-btn" data-care-pdf="${s.id}" title="Télécharger le PDF">⇩</button></td>
+      </tr>
+    `).join('');
+
+    tbody.querySelectorAll('[data-care-pdf]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const summary = PO_Care.getSummary(btn.dataset.carePdf);
+        if (summary && typeof PO_CarePdf !== 'undefined') {
+          PO_CarePdf.generate(summary, PO_Care.getConfig().title);
+        }
+      });
+    });
+  }
+
+  /* =========================================================
      HELPERS
   ========================================================= */
   function escapeHtml(str) {
@@ -1532,6 +1924,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const date = new Date(isoDateTime);
     return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) + ' · ' +
            date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // Formatage des prix en CAD (convention québécoise) : "88,00 $ CAD".
+  // N'accepte qu'un nombre, ou une chaîne représentant intégralement un
+  // nombre ; toute autre valeur (texte libre, montant déjà formaté) est
+  // retournée telle quelle plutôt que mal interprétée par un parsing trop
+  // permissif (ex. "3×75 min" ne doit jamais devenir un prix en CAD).
+  function formatPrice(value) {
+    if (value === null || value === undefined || value === '') return '—';
+    if (typeof value !== 'number' && typeof value !== 'string') return String(value);
+    const trimmed = typeof value === 'string' ? value.trim() : value;
+    const isPureNumber = typeof trimmed === 'number' || /^-?\d+([.,]\d+)?$/.test(trimmed);
+    if (!isPureNumber) return String(value);
+    const num = typeof trimmed === 'number' ? trimmed : parseFloat(trimmed.replace(',', '.'));
+    if (Number.isNaN(num)) return String(value);
+    return num.toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' $ CAD';
   }
 
   /* ---------- INITIAL RENDER ---------- */

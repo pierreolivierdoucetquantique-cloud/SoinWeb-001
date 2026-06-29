@@ -14,6 +14,17 @@
 
 const PO_Messenger = (() => {
   const MESSAGES_KEY = 'po_demo_messages';
+  const TYPING_KEY = 'po_demo_messenger_typing';
+
+  // Durée de vie d'un signal de frappe : si rien n'est reçu depuis ce délai,
+  // on considère que la personne a arrêté d'écrire (évite un indicateur figé
+  // si l'autre fenêtre se ferme sans déclencher l'événement d'arrêt).
+  const TYPING_TTL_MS = 4000;
+
+  // Taille maximale d'une pièce jointe en base64 (≈ 4 Mo de fichier source ;
+  // l'encodage base64 gonfle la taille d'environ 33%). Au-delà, localStorage
+  // (limité à quelques Mo par origine) saturerait rapidement.
+  const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
 
   function _read() {
     try {
@@ -28,7 +39,8 @@ const PO_Messenger = (() => {
   }
 
   // Modèle d'un message :
-  // { id, clientId, sender ('client' | 'admin'), body, createdAt, seenByClient, seenByAdmin }
+  // { id, clientId, sender ('client' | 'admin'), body, createdAt, seenByClient, seenByAdmin,
+  //   attachment: { name, type, size, dataUrl } | null }
 
   function listConversation(clientId) {
     return _read()
@@ -53,17 +65,33 @@ const PO_Messenger = (() => {
     }).sort((a, b) => new Date(b.lastMessage.createdAt) - new Date(a.lastMessage.createdAt));
   }
 
-  function sendMessage({ clientId, sender, body }) {
-    if (!body || !body.trim()) return { ok: false, error: 'Le message ne peut pas être vide.' };
+  function sendMessage({ clientId, sender, body, attachment }) {
+    const hasText = body && body.trim();
+    const hasAttachment = attachment && attachment.dataUrl;
+    if (!hasText && !hasAttachment) {
+      return { ok: false, error: 'Le message ne peut pas être vide.' };
+    }
+    if (hasAttachment) {
+      const approxBytes = Math.ceil((attachment.dataUrl.length * 3) / 4);
+      if (approxBytes > MAX_ATTACHMENT_BYTES) {
+        return { ok: false, error: 'Fichier trop volumineux (limite 4 Mo en simulation locale).' };
+      }
+    }
     const messages = _read();
     const message = {
       id: 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
       clientId,
       sender, // 'client' ou 'admin'
-      body: body.trim(),
+      body: hasText ? body.trim() : '',
       createdAt: new Date().toISOString(),
       seenByClient: sender === 'client',
-      seenByAdmin: sender === 'admin'
+      seenByAdmin: sender === 'admin',
+      attachment: hasAttachment ? {
+        name: attachment.name || 'fichier',
+        type: attachment.type || 'application/octet-stream',
+        size: attachment.size || 0,
+        dataUrl: attachment.dataUrl
+      } : null
     };
     messages.push(message);
     _write(messages);
@@ -91,8 +119,58 @@ const PO_Messenger = (() => {
     return _read().filter(m => m.sender === 'client' && !m.seenByAdmin).length;
   }
 
+  // ===========================================================
+  // INDICATEUR DE FRAPPE
+  //
+  // SIMULATION FRONTEND : un signal "X est en train d'écrire" est écrit en
+  // localStorage avec un horodatage, et expire automatiquement après
+  // TYPING_TTL_MS s'il n'est pas renouvelé ou explicitement effacé. Ceci ne
+  // fonctionne qu'entre deux onglets/fenêtres du MÊME navigateur (ex. l'admin
+  // et le client testés sur le même poste) : localStorage n'est pas partagé
+  // entre deux appareils différents. Une vraie synchronisation multi-appareil
+  // demanderait un canal temps réel côté serveur (ex. Supabase Realtime).
+  // ===========================================================
+
+  function _readTyping() {
+    try {
+      return JSON.parse(localStorage.getItem(TYPING_KEY)) || {};
+    } catch {
+      return {};
+    }
+  }
+
+  function _writeTyping(typing) {
+    localStorage.setItem(TYPING_KEY, JSON.stringify(typing));
+  }
+
+  // viewer : 'admin' ou 'client' — qui est en train d'écrire.
+  function setTyping(clientId, viewer) {
+    const typing = _readTyping();
+    if (!typing[clientId]) typing[clientId] = {};
+    typing[clientId][viewer] = Date.now();
+    _writeTyping(typing);
+  }
+
+  function clearTyping(clientId, viewer) {
+    const typing = _readTyping();
+    if (typing[clientId]) {
+      delete typing[clientId][viewer];
+      _writeTyping(typing);
+    }
+  }
+
+  // Indique si "viewer" (admin ou client) est actuellement en train d'écrire
+  // dans la conversation donnée, en tenant compte de l'expiration du signal.
+  function isTyping(clientId, viewer) {
+    const typing = _readTyping();
+    const ts = typing[clientId] && typing[clientId][viewer];
+    if (!ts) return false;
+    return (Date.now() - ts) < TYPING_TTL_MS;
+  }
+
   return {
     listConversation, listConversationsSummary, sendMessage,
-    markConversationSeen, countUnreadForClient, countUnreadForAdmin
+    markConversationSeen, countUnreadForClient, countUnreadForAdmin,
+    setTyping, clearTyping, isTyping
   };
 })();
