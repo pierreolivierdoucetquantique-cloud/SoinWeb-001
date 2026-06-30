@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mon profil — Ntabou Aka Wé</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a href="index.html" class="brand">
+    <span class="brand__mark">✦</span>
+    <span class="brand__name">Ntabou Aka Wé</span>
+  </a>
+  <nav class="main-nav" aria-label="Navigation principale">
+  </nav>
+  <div class="header-actions">
+    <a href="#" id="logout-link" class="btn btn--ghost">Déconnexion</a>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<nav class="mobile-nav" id="mobile-nav" aria-label="Navigation mobile">
+  <a href="#" id="logout-link-mobile">Déconnexion</a>
+</nav>
+
+<main class="account">
+
+  <div class="account__head">
+    <div class="account__avatar" id="avatar-display">PO</div>
+    <div>
+      <p class="account__name" id="display-name">—</p>
+      <p class="account__email" id="display-email">—</p>
+    </div>
+  </div>
+
+  <div class="account__layout">
+
+    <nav class="account__nav" aria-label="Navigation du profil">
+      <button data-panel="profil" aria-selected="true">Mon profil</button>
+      <button data-panel="rdv">Rendez-vous</button>
+      <button data-panel="messages">Messages<span class="sidebar-badge" id="client-messenger-badge" hidden>0</span></button>
+      <button data-panel="securite">Mot de passe</button>
+      <button data-panel="danger" class="danger">Supprimer le compte</button>
+    </nav>
+
+    <div class="account__content">
+
+      <!-- ===================== PROFIL ===================== -->
+      <section class="account__panel" data-panel="profil" data-active="true">
+        <div class="account-card">
+          <h3>Informations personnelles</h3>
+          <div class="auth__notice" id="profile-notice" hidden></div>
+          <form id="profile-form" novalidate>
+            <div class="field-row">
+              <div class="field">
+                <label for="firstName">Prénom</label>
+                <input type="text" id="firstName" name="firstName">
+              </div>
+              <div class="field">
+                <label for="lastName">Nom</label>
+                <input type="text" id="lastName" name="lastName">
+              </div>
+            </div>
+            <div class="field">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email">
+            </div>
+            <div class="field">
+              <label for="phone">Téléphone</label>
+              <input type="tel" id="phone" name="phone" placeholder="06 12 34 56 78">
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label for="city">Ville</label>
+                <input type="text" id="city" name="city" required>
+              </div>
+              <div class="field">
+                <label for="province">Province</label>
+                <input type="text" id="province" name="province" required>
+              </div>
+            </div>
+            <div class="field">
+              <label for="country">Pays</label>
+              <input type="text" id="country" name="country" required>
+            </div>
+            <button type="submit" class="auth__submit" style="max-width:220px;">Enregistrer</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ===================== RDV ===================== -->
+      <section class="account__panel" data-panel="rdv">
+        <div class="account-card">
+          <h3>Rendez-vous à venir</h3>
+          <div class="appt-list" id="upcoming-list">
+            <!-- injecté par JS -->
+          </div>
+        </div>
+        <div class="account-card">
+          <h3>Historique des rendez-vous</h3>
+          <div class="appt-list" id="history-list">
+            <!-- injecté par JS -->
+          </div>
+        </div>
+        <div class="account-card">
+          <h3>Historique des Soins Interactifs</h3>
+          <div class="appt-list" id="care-history-list">
+            <!-- injecté par JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== MESSAGES ===================== -->
+      <section class="account__panel" data-panel="messages">
+        <div class="account-card" style="padding:0; overflow:hidden;">
+          <div class="messenger-thread" id="client-messenger-thread" style="height:520px;">
+            <div class="messenger-empty-thread">Chargement…</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== SECURITE ===================== -->
+      <section class="account__panel" data-panel="securite">
+        <div class="account-card">
+          <h3>Changer mon mot de passe</h3>
+          <div class="auth__notice" id="password-notice" hidden></div>
+          <form id="password-form" novalidate>
+            <div class="field field--password">
+              <label for="currentPassword">Mot de passe actuel</label>
+              <input type="password" id="currentPassword" autocomplete="current-password">
+              <button type="button" class="field__toggle" data-toggle-for="currentPassword">Afficher</button>
+            </div>
+            <div class="field field--password">
+              <label for="newPassword">Nouveau mot de passe</label>
+              <input type="password" id="newPassword" autocomplete="new-password" minlength="8">
+              <button type="button" class="field__toggle" data-toggle-for="newPassword">Afficher</button>
+              <span class="field__error" id="err-newPassword"></span>
+            </div>
+            <button type="submit" class="auth__submit" style="max-width:260px;">Mettre à jour</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ===================== DANGER ===================== -->
+      <section class="account__panel" data-panel="danger">
+        <div class="danger-zone">
+          <h3>Supprimer mon compte</h3>
+          <p>
+            Cette action est irréversible. Toutes vos données, votre historique de rendez-vous
+            et vos factures seront définitivement supprimés.
+          </p>
+          <button class="btn--danger" id="open-delete-confirm">Supprimer mon compte</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</main>
+
+<!-- ===================== DELETE CONFIRM DIALOG ===================== -->
+<div class="confirm-veil" id="delete-confirm" hidden>
+  <div class="confirm-box">
+    <h3>Suppression du compte</h3>
+    <p>Voulez-vous supprimer définitivement votre compte ? Cette action est irréversible.</p>
+    <div class="confirm-box__actions">
+      <button class="confirm-box__cancel" id="cancel-delete">Annuler</button>
+      <button class="confirm-box__confirm" id="confirm-delete">Supprimer définitivement</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+<script src="auth.js"></script>
+<script src="messenger-store.js"></script>
+<script src="care-session-store.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="care-pdf.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const user = PO_Auth.getCurrentUser();
+
+  // Pas de session active → retour à la connexion
+  if (!user) {
+    window.location.href = 'connexion.html';
+    return;
+  }
+
+  function renderUser(u) {
+    document.getElementById('display-name').textContent = `${u.firstName} ${u.lastName}`;
+    document.getElementById('display-email').textContent = u.email;
+    document.getElementById('avatar-display').textContent =
+      (u.firstName[0] || '').toUpperCase() + (u.lastName[0] || '').toUpperCase();
+    document.getElementById('firstName').value = u.firstName || '';
+    document.getElementById('lastName').value  = u.lastName || '';
+    document.getElementById('email').value     = u.email || '';
+    document.getElementById('phone').value     = u.phone || '';
+    document.getElementById('city').value      = u.city || '';
+    document.getElementById('province').value  = u.province || '';
+    document.getElementById('country').value   = u.country || '';
+  }
+  renderUser(user);
+
+  /* ---------- CLIENT MESSENGER ---------- */
+  function updateClientMessengerBadge() {
+    const badge = document.getElementById('client-messenger-badge');
+    const count = PO_Messenger.countUnreadForClient(user.id);
+    badge.textContent = count;
+    badge.hidden = count === 0;
+  }
+
+  let _clientPendingAttachment = null;
+  let _clientMessengerPollTimer = null;
+  let _clientLastRenderedCount = -1;
+
+  // Rend une bulle de message avec sa pièce jointe éventuelle (même logique
+  // que côté admin, dupliquée ici car les deux pages ont des closures séparés).
+  function renderClientMessageBubble(m) {
+    const outgoing = m.sender === 'client';
+    let attachmentHtml = '';
+    if (m.attachment) {
+      const isImage = (m.attachment.type || '').startsWith('image/');
+      attachmentHtml = isImage
+        ? `<span class="messenger-bubble__attachment"><img src="${m.attachment.dataUrl}" alt="${escapeHtmlClient(m.attachment.name)}"></span>`
+        : `<span class="messenger-bubble__attachment"><a class="messenger-bubble__attachment-file" href="${m.attachment.dataUrl}" download="${escapeHtmlClient(m.attachment.name)}"><i>${(m.attachment.type || '').includes('pdf') ? '📄' : '📎'}</i>${escapeHtmlClient(m.attachment.name)}</a></span>`;
+    }
+    return `
+      <div class="messenger-bubble ${outgoing ? 'messenger-bubble--out' : 'messenger-bubble--in'}">
+        ${m.body ? escapeHtmlClient(m.body) : ''}
+        ${attachmentHtml}
+        <span class="messenger-bubble__time">${formatDateTimeShortClient(m.createdAt)}</span>
+      </div>
+    `;
+  }
+
+  function renderClientMessenger() {
+    PO_Messenger.markConversationSeen(user.id, 'client');
+    updateClientMessengerBadge();
+    _clientPendingAttachment = null;
+
+    const thread = document.getElementById('client-messenger-thread');
+    const messages = PO_Messenger.listConversation(user.id);
+    _clientLastRenderedCount = messages.length;
+
+    thread.innerHTML = `
+      <div class="messenger-thread__head">Échanger avec Ntabou Aka Wé</div>
+      <div class="messenger-thread__messages" id="client-messages-list">
+        ${messages.map(renderClientMessageBubble).join('') || '<p class="empty-state">Aucun message encore. Posez votre première question ci-dessous.</p>'}
+      </div>
+      <div class="messenger-typing" id="client-typing-indicator"></div>
+      <div id="client-attachment-preview"></div>
+      <form class="messenger-thread__form" id="client-messenger-send-form">
+        <button type="button" class="messenger-attach-btn" id="client-attach-btn" title="Joindre une image ou un fichier">📎</button>
+        <input type="file" id="client-file-input" accept="image/*,application/pdf" hidden>
+        <input type="text" id="client-messenger-input" placeholder="Écrire un message..." autocomplete="off">
+        <button type="submit">Envoyer</button>
+      </form>
+    `;
+
+    const messagesList = document.getElementById('client-messages-list');
+    messagesList.scrollTop = messagesList.scrollHeight;
+
+    const input = document.getElementById('client-messenger-input');
+    const fileInput = document.getElementById('client-file-input');
+
+    document.getElementById('client-attach-btn').addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      if (file.size > 4 * 1024 * 1024) {
+        showClientToast('Fichier trop volumineux (limite 4 Mo en simulation locale).');
+        fileInput.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        _clientPendingAttachment = { name: file.name, type: file.type, size: file.size, dataUrl: reader.result };
+        renderClientAttachmentPreview();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function renderClientAttachmentPreview() {
+      const previewEl = document.getElementById('client-attachment-preview');
+      if (!_clientPendingAttachment) { previewEl.innerHTML = ''; return; }
+      const isImage = (_clientPendingAttachment.type || '').startsWith('image/');
+      previewEl.innerHTML = `
+        <div class="messenger-attachment-preview">
+          ${isImage
+            ? `<img src="${_clientPendingAttachment.dataUrl}" alt="">`
+            : `<span class="messenger-attachment-preview__icon">📄</span>`}
+          <span class="messenger-attachment-preview__name">${escapeHtmlClient(_clientPendingAttachment.name)}</span>
+          <button type="button" class="messenger-attachment-preview__remove" id="client-attachment-remove">✕</button>
+        </div>
+      `;
+      document.getElementById('client-attachment-remove').addEventListener('click', () => {
+        _clientPendingAttachment = null;
+        fileInput.value = '';
+        renderClientAttachmentPreview();
+      });
+    }
+
+    // ---- Indicateur de frappe ----
+    let typingTimeout = null;
+    input.addEventListener('input', () => {
+      PO_Messenger.setTyping(user.id, 'client');
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => PO_Messenger.clearTyping(user.id, 'client'), 2000);
+    });
+
+    document.getElementById('client-messenger-send-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const body = input.value;
+      if (!body.trim() && !_clientPendingAttachment) return;
+
+      const result = PO_Messenger.sendMessage({ clientId: user.id, sender: 'client', body, attachment: _clientPendingAttachment });
+      if (!result.ok) {
+        showClientToast(result.error);
+        return;
+      }
+
+      PO_Messenger.clearTyping(user.id, 'client');
+      clearTimeout(typingTimeout);
+      input.value = '';
+      _clientPendingAttachment = null;
+      fileInput.value = '';
+      renderClientMessenger();
+    });
+
+    startClientMessengerPolling();
+  }
+
+  // Petite notification éphémère côté client, sans dépendre d'un composant
+  // toast partagé (cette page n'en a pas).
+  function showClientToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'auth__notice';
+    toast.dataset.tone = 'error';
+    toast.style.position = 'fixed';
+    toast.style.bottom = '24px';
+    toast.style.right = '24px';
+    toast.style.zIndex = '500';
+    toast.style.maxWidth = '320px';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3500);
+  }
+
+  // Sondage léger de la conversation : ne capte que les changements écrits
+  // dans LE MÊME navigateur (ex. l'admin ouvert dans un autre onglet du même
+  // poste). Pas de synchronisation entre deux appareils différents sans
+  // backend réel (voir l'avertissement en tête de messenger-store.js).
+  function startClientMessengerPolling() {
+    stopClientMessengerPolling();
+    _clientMessengerPollTimer = setInterval(() => {
+      const panel = document.querySelector('.account__panel[data-panel="messages"]');
+      if (!panel || panel.getAttribute('data-active') !== 'true') { stopClientMessengerPolling(); return; }
+
+      const messages = PO_Messenger.listConversation(user.id);
+      if (messages.length !== _clientLastRenderedCount) {
+        _clientLastRenderedCount = messages.length;
+        PO_Messenger.markConversationSeen(user.id, 'client');
+        updateClientMessengerBadge();
+        const list = document.getElementById('client-messages-list');
+        if (list) {
+          const wasNearBottom = (list.scrollHeight - list.scrollTop - list.clientHeight) < 60;
+          list.innerHTML = messages.map(renderClientMessageBubble).join('') || '<p class="empty-state">Aucun message encore. Posez votre première question ci-dessous.</p>';
+          if (wasNearBottom) list.scrollTop = list.scrollHeight;
+        }
+      }
+
+      const typingEl = document.getElementById('client-typing-indicator');
+      if (typingEl) {
+        typingEl.innerHTML = PO_Messenger.isTyping(user.id, 'admin')
+          ? '<span class="messenger-typing__dots"><span></span><span></span><span></span></span> Ntabou Aka Wé est en train d\'écrire...'
+          : '';
+      }
+    }, 1500);
+  }
+
+  function stopClientMessengerPolling() {
+    if (_clientMessengerPollTimer) { clearInterval(_clientMessengerPollTimer); _clientMessengerPollTimer = null; }
+  }
+
+  function escapeHtmlClient(str) {
+    const div = document.createElement('div');
+    div.textContent = String(str ?? '');
+    return div.innerHTML;
+  }
+
+  function formatDateTimeShortClient(isoDateTime) {
+    const date = new Date(isoDateTime);
+    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) + ' · ' +
+           date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  updateClientMessengerBadge();
+
+  /* ---------- TAB NAVIGATION ---------- */
+  document.querySelectorAll('.account__nav button[data-panel]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.account__nav button').forEach(b => b.setAttribute('aria-selected', 'false'));
+      btn.setAttribute('aria-selected', 'true');
+      document.querySelectorAll('.account__panel').forEach(p => p.removeAttribute('data-active'));
+      document.querySelector(`.account__panel[data-panel="${btn.dataset.panel}"]`).setAttribute('data-active', 'true');
+      if (btn.dataset.panel === 'messages') renderClientMessenger();
+    });
+  });
+
+  /* ---------- RENDEZ-VOUS : données réelles du client (PO_Auth) ----------
+     Les rendez-vous proviennent de localStorage sur cet appareil — créés soit
+     par l'admin (Calendrier), soit par le client lui-même depuis les pages
+     Soins Énergétiques / Accompagnement 1:1. Tant qu'un vrai backend (ex.
+     Supabase) n'est pas branché, ces données ne sont pas visibles sur un
+     autre appareil. */
+  const allAppts = PO_Auth.listAppointmentsForClient(user.id);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const upcoming = allAppts
+    .filter(a => !a.blocked && a.status !== 'cancelled' && a.date >= todayStr)
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  const history = allAppts
+    .filter(a => !a.blocked && (a.status === 'done' || a.status === 'cancelled' || a.date < todayStr))
+    .sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+
+  function formatApptDate(isoDate) {
+    const d = new Date(isoDate + 'T00:00:00');
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  const STATUS_LABELS = { confirmed: 'Confirmé', pending: 'En attente', cancelled: 'Annulé', done: 'Terminé' };
+
+  function renderAppointments(list, containerId, statusClassFallback) {
+    const el = document.getElementById(containerId);
+    if (!list.length) {
+      el.innerHTML = '<p class="empty-state">Aucun rendez-vous pour le moment.</p>';
+      return;
+    }
+    el.innerHTML = list.map(a => {
+      const statusClass = `appt-row__status--${a.status === 'pending' ? 'pending' : (a.status === 'confirmed' ? 'confirmed' : 'done')}`;
+      return `
+      <div class="appt-row">
+        <span class="appt-row__date">${formatApptDate(a.date)} · ${a.time}</span>
+        <span class="appt-row__info"><strong>${a.service}</strong><span>${a.duration} min</span></span>
+        <span class="appt-row__status ${statusClass}">${STATUS_LABELS[a.status] || a.status}</span>
+      </div>`;
+    }).join('');
+  }
+  renderAppointments(upcoming, 'upcoming-list', 'appt-row__status--confirmed');
+  renderAppointments(history, 'history-list', 'appt-row__status--done');
+
+  /* ---------- HISTORIQUE DES SOINS INTERACTIFS ---------- */
+  function renderCareHistory() {
+    const el = document.getElementById('care-history-list');
+    if (!el || typeof PO_Care === 'undefined') return;
+    const summaries = PO_Care.listSummariesForClient(user.id);
+    if (!summaries.length) {
+      el.innerHTML = '<p class="empty-state">Aucun Soin Interactif complété pour le moment.</p>';
+      return;
+    }
+    el.innerHTML = summaries.map(s => {
+      const dateStr = new Date(s.completedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+      return `
+      <div class="appt-row">
+        <span class="appt-row__date">${dateStr}</span>
+        <span class="appt-row__info"><strong>Soin Énergétique Interactif</strong><span>${s.durationMinutes} min</span></span>
+        <button type="button" class="btn btn--ghost btn--sm care-history-pdf-btn" data-summary-id="${s.id}">PDF</button>
+      </div>`;
+    }).join('');
+    el.querySelectorAll('.care-history-pdf-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const summary = PO_Care.getSummary(btn.dataset.summaryId);
+        if (summary) PO_CarePdf.generate(summary, PO_Care.getConfig().title);
+      });
+    });
+  }
+  renderCareHistory();
+
+  /* ---------- PROFILE FORM ---------- */
+  const profileForm   = document.getElementById('profile-form');
+  const profileNotice = document.getElementById('profile-notice');
+  profileForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const city = document.getElementById('city').value.trim();
+    const province = document.getElementById('province').value.trim();
+    const country = document.getElementById('country').value.trim();
+
+    if (!city || !province || !country) {
+      profileNotice.hidden = false;
+      profileNotice.dataset.tone = 'error';
+      profileNotice.textContent = 'Les champs Ville, Province et Pays sont obligatoires.';
+      return;
+    }
+
+    const patch = {
+      firstName: document.getElementById('firstName').value.trim(),
+      lastName:  document.getElementById('lastName').value.trim(),
+      email:     document.getElementById('email').value.trim(),
+      phone:     document.getElementById('phone').value.trim(),
+      city, province, country
+    };
+    const result = PO_Auth.updateProfile(user.id, patch);
+    profileNotice.hidden = false;
+    if (result.ok) {
+      profileNotice.dataset.tone = 'success';
+      profileNotice.textContent = 'Profil mis à jour avec succès.';
+      renderUser(result.user);
+    } else {
+      profileNotice.dataset.tone = 'error';
+      profileNotice.textContent = result.error;
+    }
+  });
+
+  /* ---------- PASSWORD FORM ---------- */
+  document.querySelectorAll('[data-toggle-for]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.toggleFor);
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      btn.textContent = showing ? 'Afficher' : 'Masquer';
+    });
+  });
+
+  poAttachPasswordValidation(document.getElementById('newPassword'), document.getElementById('err-newPassword'));
+
+  const passwordForm   = document.getElementById('password-form');
+  const passwordNotice = document.getElementById('password-notice');
+  passwordForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const current = document.getElementById('currentPassword').value;
+    const next     = document.getElementById('newPassword').value;
+    const errEl    = document.getElementById('err-newPassword');
+    errEl.textContent = '';
+    passwordNotice.hidden = true;
+
+    const freshUser = PO_Auth.getCurrentUser();
+    if (current !== freshUser.password) {
+      passwordNotice.hidden = false;
+      passwordNotice.dataset.tone = 'error';
+      passwordNotice.textContent = 'Le mot de passe actuel est incorrect.';
+      return;
+    }
+    const pwdCheck = poValidatePassword(next);
+    if (!pwdCheck.valid) {
+      errEl.textContent = 'Manque : ' + pwdCheck.errors.join(', ') + '.';
+      return;
+    }
+    PO_Auth.updateProfile(user.id, { password: next });
+    passwordNotice.hidden = false;
+    passwordNotice.dataset.tone = 'success';
+    passwordNotice.textContent = 'Mot de passe mis à jour avec succès.';
+    passwordForm.reset();
+  });
+
+  /* ---------- DELETE ACCOUNT ---------- */
+  const deleteVeil = document.getElementById('delete-confirm');
+  document.getElementById('open-delete-confirm').addEventListener('click', () => { deleteVeil.hidden = false; });
+  document.getElementById('cancel-delete').addEventListener('click', () => { deleteVeil.hidden = true; });
+  document.getElementById('confirm-delete').addEventListener('click', () => {
+    PO_Auth.deleteAccount(user.id);
+    window.location.href = 'index.html';
+  });
+
+  /* ---------- LOGOUT ---------- */
+  function doLogout(e) {
+    e.preventDefault();
+    PO_Auth.logout();
+    window.location.href = 'index.html';
+  }
+  document.getElementById('logout-link').addEventListener('click', doLogout);
+  document.getElementById('logout-link-mobile').addEventListener('click', doLogout);
+});
+</script>
+</body>
+</html>
