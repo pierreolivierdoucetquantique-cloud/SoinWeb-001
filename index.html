@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ntabou Aka Wé — Lieu Sacré</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ===================== SEAL / THRESHOLD MODAL ===================== -->
+<div id="threshold" class="threshold" role="dialog" aria-modal="true" aria-labelledby="threshold-title">
+  <div class="threshold__veil"></div>
+  <div class="threshold__panel">
+    <div class="threshold__sigil" aria-hidden="true">
+      <svg viewBox="0 0 100 100" class="sigil-svg">
+        <circle cx="50" cy="50" r="46" class="sigil-ring sigil-ring--outer"/>
+        <circle cx="50" cy="50" r="34" class="sigil-ring sigil-ring--inner"/>
+        <polygon points="50,8 88,72 12,72" class="sigil-tri"/>
+        <circle cx="50" cy="50" r="4" class="sigil-core"/>
+      </svg>
+    </div>
+
+    <p class="threshold__eyebrow" id="threshold-eyebrow">Avant d'entrer</p>
+    <h2 id="threshold-title" class="threshold__title">Lieu&nbsp;Sacré</h2>
+
+    <p class="threshold__text" id="threshold-text-content">
+      En entrant ici vous acceptez de respecter ce lieu, les membres, d'être à l'écoute de vous-même,
+      d'agir avec bienveillance et authenticité.
+    </p>
+
+    <label class="threshold__check">
+      <input type="checkbox" id="threshold-accept">
+      <span class="threshold__check-box" aria-hidden="true"></span>
+      <span>J'ai lu et j'accepte ces conditions</span>
+    </label>
+
+    <button id="threshold-enter" class="threshold__enter" disabled>
+      <span>Franchir le seuil</span>
+    </button>
+  </div>
+</div>
+
+<!-- ===================== SITE HEADER ===================== -->
+<header class="site-header">
+  <a href="#home" class="brand">
+    <span class="brand__mark">✦</span>
+    <span class="brand__name" id="brand-tagline">Bienvenue dans mon univers</span>
+  </a>
+
+  <nav class="main-nav" aria-label="Navigation principale">
+  </nav>
+</header>
+
+<!-- ===================== HERO ===================== -->
+<main id="home">
+  <section class="hero">
+    <div class="hero__bg">
+      <div class="hero__img-wrap">
+        <img src="hero-bg.png" alt="Ntabou Aka Wé relié au vivant, aux éléments et aux royaumes invisibles" class="hero__img">
+        <a href="connexion.html" class="hero__portal hero__portal--connexion" aria-label="Connexion"></a>
+        <a href="services-energetiques.html" class="hero__portal hero__portal--energetiques" aria-label="Découvrir Soins Énergétiques"></a>
+        <a href="soins-direct.html" class="hero__portal hero__portal--direct" aria-label="Découvrir Soins Direct"></a>
+        <a href="accompagnement.html" class="hero__portal hero__portal--accompagnement" aria-label="Découvrir Accompagnement 1:1"></a>
+        <a href="inscription.html" class="hero__portal hero__portal--inscription" aria-label="Créer un compte"></a>
+        <a href="histoire.html" class="hero__portal hero__portal--pierre" aria-label="Découvrir l'histoire de Pierre-Olivier"></a>
+      </div>
+      <div class="hero__scrim"></div>
+      <div class="hero__particles" id="particles" aria-hidden="true"></div>
+    </div>
+
+    <div class="hero__scrolldown" aria-hidden="true">
+      <span></span>
+      <em>Découvrir les soins</em>
+    </div>
+  </section>
+
+  <!-- ===================== FOOTER STRIP ===================== -->
+  <footer class="site-footer">
+    <p class="site-footer__line">Au service du vivant, en harmonie avec le tout.</p>
+    <div class="site-footer__bottom">
+      <span>© <span id="year"></span> Ntabou Aka Wé</span>
+      <nav>
+        <a href="confidentialite.html">Confidentialité</a>
+        <a href="conditions.html">Conditions</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+    </div>
+  </footer>
+</main>
+
+<script src="content-store.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
