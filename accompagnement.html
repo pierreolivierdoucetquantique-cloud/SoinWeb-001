@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Accompagnement 1:1 — Ntabou Aka Wé</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-accent="ether">
+
+<!-- ===================== SITE HEADER ===================== -->
+<header class="site-header">
+  <a href="index.html" class="brand">
+    <span class="brand__mark">✦</span>
+    <span class="brand__name">Ntabou Aka Wé</span>
+  </a>
+
+  <nav class="main-nav" aria-label="Navigation principale">
+  </nav>
+
+  <div class="header-actions">
+    <a href="index.html" class="btn btn--ghost">← Retour à l'accueil</a>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<nav class="mobile-nav" id="mobile-nav" aria-label="Navigation mobile">
+  <a href="index.html">← Retour à l'accueil</a>
+</nav>
+
+<main>
+
+  <!-- ===================== PAGE HERO ===================== -->
+  <section class="page-hero">
+    <p class="page-hero__crumb">
+      <a href="index.html">Accueil</a> <span>/</span> Accompagnement 1:1
+    </p>
+    <span class="page-hero__rune" id="service-rune">🜄</span>
+    <h1 class="page-hero__title" id="service-title">Accompagnement 1:1</h1>
+    <p class="page-hero__lede" id="service-tagline">
+      Un chemin suivi dans le temps, à votre rythme, pour intégrer durablement
+      les transformations engagées.
+    </p>
+  </section>
+
+  <!-- ===================== INTRO ===================== -->
+  <section class="page-section page-section--tight">
+    <p class="page-hero__lede" id="service-intro" style="text-align:left; line-height:1.75;">
+      Certaines transformations ne se jouent pas en une séance isolée, mais dans la continuité
+      d'une relation de confiance suivie dans le temps. L'accompagnement 1:1 propose un espace
+      régulier, entièrement dédié à votre cheminement, où chaque rendez-vous s'appuie sur le
+      précédent pour construire une progression cohérente.
+    </p>
+  </section>
+
+  <!-- ===================== HOW IT WORKS ===================== -->
+  <section class="page-section">
+    <p class="page-section__eyebrow" id="steps-eyebrow">Comment se déroule l'accompagnement</p>
+    <h2 class="page-section__title" id="steps-title">Trois temps simples</h2>
+    <div class="steps" id="steps-container"></div>
+  </section>
+
+  <!-- ===================== FORMULAS ===================== -->
+  <section class="page-section" id="formules">
+    <p class="page-section__eyebrow" id="formules-eyebrow">Formules</p>
+    <h2 class="page-section__title" id="formules-title">Choisissez votre accompagnement</h2>
+
+    <!-- Les formules sont injectées dynamiquement depuis le Pricing Manager (content-store.js) -->
+    <div class="formulas" id="formulas-container" data-service-id="accompagnement"></div>
+  </section>
+
+  <!-- ===================== CTA ===================== -->
+  <div class="cta-band">
+    <h2 id="cta-title">Engagez un chemin suivi dans le temps</h2>
+    <p id="cta-text">Connectez-vous pour planifier votre première séance de cadrage.</p>
+    <a href="connexion.html?redirect=accompagnement" class="btn btn--accent btn--lg" id="cta-button">Prendre rendez-vous</a>
+  </div>
+
+  <!-- ===================== FAQ ===================== -->
+  <section class="page-section page-section--tight">
+    <p class="page-section__eyebrow" id="faq-eyebrow">Questions fréquentes</p>
+    <h2 class="page-section__title" id="faq-title">Avant de réserver</h2>
+
+    <div class="faq" id="faq-container"></div>
+  </section>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="site-footer">
+    <p class="site-footer__line">Au service du vivant, en harmonie avec le tout.</p>
+    <div class="site-footer__bottom">
+      <span>© <span id="year"></span> Ntabou Aka Wé</span>
+      <nav>
+        <a href="confidentialite.html">Confidentialité</a>
+        <a href="conditions.html">Conditions</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+    </div>
+  </footer>
+</main>
+
+<!-- ===================== MODAL : RÉSERVATION CALENDRIER ===================== -->
+<div class="modal-veil" id="cal-booking-veil" hidden>
+  <div class="modal-box modal-box--booking">
+    <h3>Choisissez votre créneau</h3>
+    <p class="cal-booking__formula" id="cal-booking-formula"></p>
+    <div class="auth__notice" id="cal-booking-notice" hidden></div>
+
+    <div class="cal-booking__layout">
+      <div class="cal-booking__calendar">
+        <div class="cal-toolbar">
+          <div class="cal-toolbar__nav">
+            <button type="button" class="icon-btn" id="cal-booking-prev">←</button>
+            <span class="cal-toolbar__label" id="cal-booking-label">—</span>
+            <button type="button" class="icon-btn" id="cal-booking-next">→</button>
+          </div>
+        </div>
+        <div class="cal-grid cal-grid--booking" id="cal-booking-dow-row">
+          <div class="cal-dow">Dim</div><div class="cal-dow">Lun</div><div class="cal-dow">Mar</div>
+          <div class="cal-dow">Mer</div><div class="cal-dow">Jeu</div><div class="cal-dow">Ven</div><div class="cal-dow">Sam</div>
+        </div>
+        <div class="cal-grid cal-grid--booking" id="cal-booking-grid"></div>
+      </div>
+      <div class="cal-booking__slots">
+        <h4 id="cal-booking-slots-title">Sélectionnez d'abord un jour</h4>
+        <div id="cal-booking-slots-list"></div>
+      </div>
+    </div>
+
+    <div class="modal-box__actions">
+      <button type="button" class="modal-box__cancel" id="cal-booking-cancel">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<script src="auth.js"></script>
+<script src="content-store.js"></script>
+<script src="pricing.js"></script>
+<script src="script.js"></script>
+<script src="availability-booking.js"></script>
+</body>
+</html>
+
