@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ntabou Aka Wé — Lieu Sacré</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ===================== SEAL / THRESHOLD MODAL ===================== -->
+<div id="threshold" class="threshold" role="dialog" aria-modal="true" aria-labelledby="threshold-title">
+  <div class="threshold__veil"></div>
+  <div class="threshold__panel">
+    <div class="threshold__sigil" aria-hidden="true">
+      <svg viewBox="0 0 100 100" class="sigil-svg">
+        <circle cx="50" cy="50" r="46" class="sigil-ring sigil-ring--outer"/>
+        <circle cx="50" cy="50" r="34" class="sigil-ring sigil-ring--inner"/>
+        <polygon points="50,8 88,72 12,72" class="sigil-tri"/>
+        <circle cx="50" cy="50" r="4" class="sigil-core"/>
+      </svg>
+    </div>
+
+    <p class="threshold__eyebrow" id="threshold-eyebrow">Avant d'entrer</p>
+    <h2 id="threshold-title" class="threshold__title">Lieu&nbsp;Sacré</h2>
+
+    <p class="threshold__text" id="threshold-text-content">
+      En entrant ici vous acceptez de respecter ce lieu, les membres, d'être à l'écoute de vous-même,
+      d'agir avec bienveillance et authenticité.
+    </p>
+
+    <label class="threshold__check">
+      <input type="checkbox" id="threshold-accept">
+      <span class="threshold__check-box" aria-hidden="true"></span>
+      <span>J'ai lu et j'accepte ces conditions</span>
+    </label>
+
+    <button id="threshold-enter" class="threshold__enter" disabled>
+      <span>Franchir le seuil</span>
+    </button>
+  </div>
+</div>
+
+<!-- ===================== SITE HEADER ===================== -->
+<header class="site-header">
+  <a href="#home" class="brand">
+    <span class="brand__mark">✦</span>
+    <span class="brand__name" id="brand-tagline">Bienvenue dans mon univers</span>
+  </a>
+
+  <nav class="main-nav" aria-label="Navigation principale">
+  </nav>
+</header>
+
+<!-- ===================== HERO ===================== -->
+<main id="home">
+  <section class="hero">
+    <div class="hero__bg">
+      <div class="hero__img-wrap">
+        <img src="hero-bg-opt.jpg" alt="Ntabou Aka Wé relié au vivant, aux éléments et aux royaumes invisibles" class="hero__img">
+        <a href="connexion.html" class="hero__portal hero__portal--connexion" aria-label="Connexion"></a>
+        <a href="services-energetiques.html" class="hero__portal hero__portal--energetiques" aria-label="Découvrir Soins Énergétiques"></a>
+        <a href="soins-direct.html" class="hero__portal hero__portal--direct" aria-label="Découvrir Soins Direct"></a>
+        <a href="accompagnement.html" class="hero__portal hero__portal--accompagnement" aria-label="Découvrir Accompagnement 1:1"></a>
+        <a href="inscription.html" class="hero__portal hero__portal--inscription" aria-label="Créer un compte"></a>
+        <a href="histoire.html" class="hero__portal hero__portal--pierre" aria-label="Découvrir l'histoire de Pierre-Olivier"></a>
+        <button type="button" class="hero__portal hero__portal--crown" id="hero-crown-trigger" aria-label="Découvrir les témoignages"></button>
+      </div>
+      <div class="hero__scrim"></div>
+      <div class="hero__particles" id="particles" aria-hidden="true"></div>
+    </div>
+
+    <div class="hero__scrolldown" aria-hidden="true">
+      <span></span>
+      <em>Découvrir les soins</em>
+    </div>
+  </section>
+
+  <!-- ===================== TÉMOIGNAGES ===================== -->
+  <section class="testimonials-section" id="testimonials-section" hidden>
+    <div class="testimonials-section__inner">
+      <p class="page-section__eyebrow">La parole de ceux qui ont vécu l'expérience</p>
+      <h2 class="page-section__title">Témoignages</h2>
+
+      <form id="testimonial-form" class="testimonial-form" hidden novalidate>
+        <div class="field">
+          <label for="testi-service">Service reçu</label>
+          <select id="testi-service" required>
+            <option value="services-energetiques">Soins Énergétiques</option>
+            <option value="soins-direct">Soins Direct</option>
+            <option value="accompagnement">Accompagnement 1:1</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Votre note</label>
+          <div class="star-rating" id="testi-star-rating" data-value="5" role="radiogroup" aria-label="Note de 1 à 5 étoiles">
+            <button type="button" class="star-rating__star" data-star="1" role="radio" aria-checked="false" aria-label="1 étoile">★</button>
+            <button type="button" class="star-rating__star" data-star="2" role="radio" aria-checked="false" aria-label="2 étoiles">★</button>
+            <button type="button" class="star-rating__star" data-star="3" role="radio" aria-checked="false" aria-label="3 étoiles">★</button>
+            <button type="button" class="star-rating__star" data-star="4" role="radio" aria-checked="false" aria-label="4 étoiles">★</button>
+            <button type="button" class="star-rating__star" data-star="5" role="radio" aria-checked="true" aria-label="5 étoiles">★</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="testi-text">Votre témoignage</label>
+          <textarea id="testi-text" rows="4" maxlength="1000" required placeholder="Partagez votre expérience..."></textarea>
+        </div>
+        <div class="auth__notice" id="testimonial-form-notice" hidden></div>
+        <button type="submit" class="btn btn--accent">Envoyer mon témoignage</button>
+      </form>
+
+      <p id="testimonial-login-cta" class="testimonial-login-cta" hidden>
+        <a href="connexion.html">Connectez-vous</a> pour partager votre expérience.
+      </p>
+
+      <div class="testimonials-grid" id="testimonials-grid"></div>
+      <p class="empty-state" id="testimonials-empty" hidden>Aucun témoignage publié pour le moment.</p>
+    </div>
+  </section>
+
+  <!-- ===================== FOOTER STRIP ===================== -->
+  <footer class="site-footer">
+    <p class="site-footer__line">Au service du vivant, en harmonie avec le tout.</p>
+    <div class="site-footer__bottom">
+      <span>© <span id="year"></span> Ntabou Aka Wé</span>
+      <nav>
+        <a href="confidentialite.html">Confidentialité</a>
+        <a href="conditions.html">Conditions</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+    </div>
+  </footer>
+</main>
+
+<script src="auth.js"></script>
+<script src="content-store.js"></script>
+<script src="pricing.js"></script>
+<script src="testimonials-store.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
