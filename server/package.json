@@ -1,0 +1,16 @@
+{
+  "name": "ntabou-aka-we-api",
+  "version": "1.0.0",
+  "description": "Serveur API — envoi de courriels (Resend) et paiements (Stripe) pour Ntabou Aka Wé",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "stripe": "^16.0.0"
+  }
+}
