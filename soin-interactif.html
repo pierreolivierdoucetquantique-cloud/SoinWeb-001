@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soin Interactif — Ntabou Aka Wé</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<meta name="robots" content="noindex, nofollow">
+</head>
+<body data-accent="feu">
+
+<!-- =========================================================
+     SOIN INTERACTIF — SIMULATION FRONTEND UNIQUEMENT
+     Cette page n'a aucun serveur derrière elle. La "garde d'accès"
+     ci-dessous (paiement requis, conditions acceptées) est une
+     vérification JavaScript exécutée dans le navigateur du visiteur :
+     elle est démonstrative et peut être contournée via les DevTools.
+     Voir l'avertissement complet dans care-session-store.js.
+========================================================= -->
+
+<!-- ===================== GARDE D'ACCÈS (écran d'attente) ===================== -->
+<div id="care-guard-screen" class="care-guard">
+  <p>Vérification de votre accès…</p>
+</div>
+
+<!-- ===================== EN-TÊTE DE SÉANCE ===================== -->
+<header class="care-header" id="care-header" hidden>
+  <div class="care-header__identity">
+    <span class="care-header__label">Soin Interactif</span>
+    <span class="care-header__name" id="care-client-name">—</span>
+  </div>
+  <div class="care-header__timer">
+    <span class="care-header__timer-value" id="care-timer">40:00</span>
+    <span class="care-header__timer-label">temps restant</span>
+  </div>
+  <div class="care-header__progress">
+    <div class="care-progress-track">
+      <div class="care-progress-fill" id="care-progress-fill" style="width:0%"></div>
+    </div>
+    <span class="care-progress-label" id="care-progress-label">Étape 1 / 1</span>
+  </div>
+</header>
+
+<!-- ===================== SCÈNE DE SOIN ===================== -->
+<main class="care-stage" id="care-stage" hidden>
+
+  <div class="care-card" id="care-step-card">
+    <!-- injecté dynamiquement par care-session.js -->
+  </div>
+
+  <div class="care-nav">
+    <button type="button" class="btn btn--ghost" id="care-prev-btn" disabled>← Précédent</button>
+    <button type="button" class="btn btn--accent" id="care-next-btn">Continuer →</button>
+  </div>
+
+  <p class="care-autosave-indicator" id="care-autosave-indicator">Sauvegarde automatique activée</p>
+</main>
+
+<!-- ===================== ÉCRAN DE RÉSUMÉ FINAL ===================== -->
+<main class="care-summary" id="care-summary-screen" hidden>
+  <span class="page-hero__rune">🜂</span>
+  <h1>Merci pour votre confiance.</h1>
+  <p class="care-summary__lede">Votre Soin Interactif est maintenant terminé. Voici le résumé de votre séance.</p>
+
+  <div class="account-card care-summary__card" id="care-summary-content">
+    <!-- injecté dynamiquement -->
+  </div>
+
+  <div class="care-summary__actions">
+    <button type="button" class="btn btn--accent" id="care-download-pdf">Télécharger le PDF</button>
+    <a href="profil.html" class="btn btn--ghost">Retour à mon compte</a>
+  </div>
+
+  <p class="care-autosave-indicator" id="care-email-status"></p>
+</main>
+
+<script src="api-client.js"></script>
+<script src="auth.js"></script>
+<script src="content-store.js"></script>
+<script src="pricing.js"></script>
+<script src="notifications-store.js"></script>
+<script src="care-session-store.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="care-pdf.js"></script>
+<script src="care-session.js"></script>
+</body>
+</html>
