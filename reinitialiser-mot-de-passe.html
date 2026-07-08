@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nouveau mot de passe — Ntabou Aka Wé</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a href="index.html" class="brand">
+    <span class="brand__mark">✦</span>
+    <span class="brand__name">Ntabou Aka Wé</span>
+  </a>
+  <nav class="main-nav" aria-label="Navigation principale">
+  </nav>
+  <div class="header-actions">
+    <a href="index.html" class="btn btn--ghost">← Retour à l'accueil</a>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Ouvrir le menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<nav class="mobile-nav" id="mobile-nav" aria-label="Navigation mobile">
+  <a href="index.html">← Retour à l'accueil</a>
+</nav>
+
+<main class="auth">
+  <div class="auth__panel">
+    <p class="auth__eyebrow">Réinitialisation</p>
+    <h1 class="auth__title">Nouveau mot de passe</h1>
+    <p class="auth__sub" id="reset-sub">Choisissez un nouveau mot de passe pour votre compte</p>
+
+    <div class="auth__notice" id="form-notice" hidden></div>
+
+    <form id="reset-form" novalidate>
+      <div class="field">
+        <label for="password">Nouveau mot de passe</label>
+        <input type="password" id="password" name="password" autocomplete="new-password" required>
+        <span class="field__error" id="err-password"></span>
+      </div>
+      <div class="field">
+        <label for="password-confirm">Confirmer le mot de passe</label>
+        <input type="password" id="password-confirm" name="password-confirm" autocomplete="new-password" required>
+        <span class="field__error" id="err-password-confirm"></span>
+      </div>
+
+      <button type="submit" class="auth__submit" id="reset-submit">Réinitialiser mon mot de passe</button>
+    </form>
+
+    <p class="auth__foot" style="margin-top:24px;">
+      <a href="connexion.html">← Retour à la connexion</a>
+    </p>
+  </div>
+</main>
+
+<script src="script.js"></script>
+<script src="api-client.js"></script>
+<script src="auth.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const form   = document.getElementById('reset-form');
+  const notice = document.getElementById('form-notice');
+  const submitBtn = document.getElementById('reset-submit');
+
+  const params = new URLSearchParams(window.location.search);
+  const email = params.get('email') || '';
+  const token = params.get('token') || '';
+
+  function showNotice(msg, tone) {
+    notice.hidden = false;
+    notice.dataset.tone = tone;
+    notice.textContent = msg;
+  }
+
+  // Vérifie le lien dès le chargement de la page — évite de faire saisir
+  // un mot de passe pour rien si le lien est déjà invalide/expiré.
+  if (!email || !token) {
+    showNotice('Ce lien de réinitialisation est incomplet ou invalide. Merci de refaire une demande.', 'error');
+    form.hidden = true;
+  } else {
+    const check = await PO_Auth.verifyResetToken(email, token);
+    if (!check.ok) {
+      showNotice(check.error, 'error');
+      form.hidden = true;
+    }
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const pwd = document.getElementById('password');
+    const pwdConfirm = document.getElementById('password-confirm');
+    document.getElementById('err-password').textContent = '';
+    document.getElementById('err-password-confirm').textContent = '';
+    pwd.classList.remove('has-error');
+    pwdConfirm.classList.remove('has-error');
+    notice.hidden = true;
+
+    let hasError = false;
+    if (!pwd.value || pwd.value.length < 8) {
+      document.getElementById('err-password').textContent = 'Au moins 8 caractères.';
+      pwd.classList.add('has-error');
+      hasError = true;
+    }
+    if (pwdConfirm.value !== pwd.value) {
+      document.getElementById('err-password-confirm').textContent = 'Les mots de passe ne correspondent pas.';
+      pwdConfirm.classList.add('has-error');
+      hasError = true;
+    }
+    if (hasError) return;
+
+    const result = await PO_Auth.resetPasswordWithToken(email, token, pwd.value);
+    if (!result.ok) {
+      showNotice(result.error, 'error');
+      return;
+    }
+
+    showNotice('Votre mot de passe a été réinitialisé avec succès. Vous pouvez maintenant vous connecter.', 'success');
+    form.hidden = true;
+    submitBtn.disabled = true;
+    setTimeout(() => { window.location.href = 'connexion.html'; }, 2000);
+  });
+});
+</script>
+</body>
+</html>
