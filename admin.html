@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administration — Ntabou Aka Wé</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<meta name="robots" content="noindex, nofollow">
+</head>
+<body>
+
+<div class="admin-shell">
+
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="admin-sidebar">
+    <div class="admin-sidebar__brand">
+      <span>✦</span><span>Ntabou Aka Wé</span>
+    </div>
+    <p class="admin-sidebar__tag">Administration</p>
+
+    <nav class="admin-nav" aria-label="Navigation admin">
+      <button data-panel="dashboard" aria-selected="true"><i>◆</i><span>Tableau de bord</span></button>
+      <button data-panel="clients"><i>☉</i><span>Clients</span></button>
+      <button data-panel="calendar"><i>◷</i><span>Calendrier</span></button>
+      <button data-panel="content"><i>✎</i><span>Contenu</span></button>
+      <button data-panel="services"><i>◈</i><span>Services</span></button>
+      <button data-panel="pricing"><i>$</i><span>Tarifs</span></button>
+      <button data-panel="payments"><i>⛁</i><span>Paiements</span><span class="sidebar-badge" id="payments-badge" hidden>0</span></button>
+      <button data-panel="testimonials"><i>✦</i><span>Témoignages</span><span class="sidebar-badge" id="testimonials-badge" hidden>0</span></button>
+      <button data-panel="messenger"><i>✉</i><span>Messagerie</span><span class="sidebar-badge" id="messenger-badge" hidden>0</span></button>
+      <button data-panel="notifications"><i>♢</i><span>Notifications</span></button>
+      <button data-panel="email-templates"><i>@</i><span>Templates Email</span></button>
+      <button data-panel="automations"><i>⚡</i><span>Automatisations</span></button>
+      <button data-panel="site-settings"><i>⚙</i><span>Paramètres</span></button>
+      <button data-panel="buttons"><i>◉</i><span>Gestion des boutons</span></button>
+      <button data-panel="media"><i>⬡</i><span>Médiathèque</span></button>
+      <button data-panel="audit"><i>☰</i><span>Journal d'audit</span></button>
+    </nav>
+
+    <div class="admin-sidebar__foot">
+      <a href="index.html" data-nav-site>Voir le site</a>
+      <a href="#" id="admin-logout-link">Déconnexion</a>
+    </div>
+  </aside>
+
+  <!-- ===================== MAIN ===================== -->
+  <main class="admin-main">
+
+    <!-- ===================== DASHBOARD ===================== -->
+    <section class="admin-panel" data-panel="dashboard" data-active="true">
+      <div class="admin-header">
+        <div>
+          <h1>Tableau de bord</h1>
+          <p>Vue d'ensemble de l'activité de la plateforme</p>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+          <button type="button" class="btn btn--ghost btn--sm" id="dashboard-purge-btn" title="Supprimer toutes les données de test">🗑 Purger les données de test</button>
+        </div>
+      </div>
+
+      <div class="admin-stats">
+        <div class="admin-stat">
+          <div class="admin-stat__value" id="stat-clients">0</div>
+          <div class="admin-stat__label">Clients inscrits</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat__value" id="stat-upcoming">0</div>
+          <div class="admin-stat__label">Rendez-vous à venir</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat__value" id="stat-today">0</div>
+          <div class="admin-stat__label">Rendez-vous aujourd'hui</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat__value" id="stat-pending">0</div>
+          <div class="admin-stat__label">En attente de confirmation</div>
+        </div>
+      </div>
+
+      <div class="account-card">
+        <h3>Prochains rendez-vous</h3>
+        <div class="appt-list" id="dashboard-upcoming-list"></div>
+      </div>
+    </section>
+
+    <!-- ===================== CLIENTS (Client Manager) ===================== -->
+    <section class="admin-panel" data-panel="clients">
+      <div class="admin-header">
+        <div>
+          <h1>Clients</h1>
+          <p>Gestion des comptes clients de la plateforme</p>
+        </div>
+      </div>
+
+      <div class="admin-toolbar">
+        <input type="search" id="client-search" placeholder="Rechercher par nom ou email...">
+        <select id="client-sort">
+          <option value="recent">Trier : plus récents</option>
+          <option value="name">Trier : nom (A-Z)</option>
+          <option value="appointments">Trier : nombre de RDV</option>
+        </select>
+        <button class="btn btn--ghost btn--sm" id="client-export-csv">Exporter CSV</button>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th></th><th>Nom</th><th>Email</th><th>Âge</th><th>Inscription</th><th>RDV</th><th>Statut</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="clients-tbody"></tbody>
+        </table>
+      </div>
+      <div class="admin-empty" id="clients-empty" hidden>Aucun client ne correspond à votre recherche.</div>
+    </section>
+
+    <!-- ===================== CALENDAR (Calendar Manager) ===================== -->
+    <section class="admin-panel" data-panel="calendar">
+      <div class="admin-header">
+        <div>
+          <h1>Calendrier</h1>
+          <p>Gestion des rendez-vous et des disponibilités — Soins Énergétiques &amp; Accompagnement 1:1</p>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn--ghost btn--sm" id="open-vacation-modal">+ Vacances</button>
+          <button class="btn btn--ghost btn--sm" id="open-block-modal">+ Bloquer un créneau</button>
+          <button class="btn btn--gold btn--sm" id="open-new-appt">+ Nouveau rendez-vous</button>
+        </div>
+      </div>
+
+      <div class="auth__notice" data-tone="error" style="margin-bottom:18px;">
+        Simulation frontend : ce calendrier est stocké en localStorage sur cet appareil. Les
+        réservations faites par un client sur un autre appareil ne se synchroniseront pas
+        ici tant qu'un vrai backend (ex. Supabase) n'est pas branché.
+      </div>
+
+      <div class="cal-subtabs" role="tablist" aria-label="Sous-sections du calendrier">
+        <button data-calsub="grid" role="tab" id="calsub-tab-grid" aria-selected="true" aria-controls="calsub-panel-grid">Calendrier</button>
+        <button data-calsub="availability" role="tab" id="calsub-tab-availability" aria-selected="false" aria-controls="calsub-panel-availability" tabindex="-1">Disponibilités &amp; vacances</button>
+      </div>
+
+      <!-- ----- SOUS-VUE : GRILLE MENSUELLE ----- -->
+      <div data-calsub-panel="grid" data-calsub-active="true" role="tabpanel" id="calsub-panel-grid" aria-labelledby="calsub-tab-grid" tabindex="0">
+        <div class="cal-toolbar">
+          <div class="cal-toolbar__nav">
+            <button class="icon-btn" id="cal-prev" aria-label="Période précédente">←</button>
+            <span class="cal-toolbar__label" id="cal-label">—</span>
+            <button class="icon-btn" id="cal-next" aria-label="Période suivante">→</button>
+          </div>
+          <div class="cal-view-switch" role="tablist" aria-label="Vue du calendrier">
+            <button type="button" data-calview="month" role="tab" aria-selected="true">Mois</button>
+            <button type="button" data-calview="week" role="tab" aria-selected="false">Semaine</button>
+            <button type="button" data-calview="day" role="tab" aria-selected="false">Jour</button>
+          </div>
+          <button class="btn btn--ghost btn--sm" id="cal-today-btn">Aujourd'hui</button>
+        </div>
+
+        <p class="cal-hint" id="cal-hint">Glissez-déposez un rendez-vous sur un autre jour pour le déplacer.</p>
+
+        <div id="cal-view-month">
+          <div class="cal-grid" id="cal-dow-row">
+            <div class="cal-dow">Dim</div><div class="cal-dow">Lun</div><div class="cal-dow">Mar</div>
+            <div class="cal-dow">Mer</div><div class="cal-dow">Jeu</div><div class="cal-dow">Ven</div><div class="cal-dow">Sam</div>
+          </div>
+          <div class="cal-grid" id="cal-grid" style="margin-top:8px;"></div>
+        </div>
+
+        <div id="cal-view-week" hidden>
+          <div class="cal-week" id="cal-week-grid"></div>
+        </div>
+
+        <div id="cal-view-day" hidden>
+          <div class="cal-day-timeline" id="cal-day-timeline-grid"></div>
+        </div>
+
+        <div class="day-appts">
+          <h3 style="font-family:var(--serif); font-size:1.1rem; margin-bottom:14px;" id="day-appts-title">Sélectionnez un jour</h3>
+          <div id="day-appts-list"></div>
+        </div>
+      </div>
+
+      <!-- ----- SOUS-VUE : DISPONIBILITÉS & VACANCES ----- -->
+      <div data-calsub-panel="availability" data-calsub-active="false" role="tabpanel" id="calsub-panel-availability" aria-labelledby="calsub-tab-availability" tabindex="0" hidden>
+        <div class="draft-bar" id="avail-draft-bar" hidden>
+          <span class="draft-bar__msg">Modifications non enregistrées</span>
+          <div class="draft-bar__actions">
+            <button type="button" class="btn btn--ghost btn--sm" id="avail-draft-cancel">Annuler</button>
+            <button type="button" class="btn btn--gold btn--sm" id="avail-draft-save">Enregistrer les modifications</button>
+          </div>
+        </div>
+
+        <div class="admin-toolbar">
+          <select id="avail-service-select">
+            <option value="services-energetiques">Soins Énergétiques</option>
+            <option value="accompagnement">Accompagnement 1:1</option>
+          </select>
+          <div class="field" style="margin:0; max-width:200px;">
+            <label for="avail-slot-duration" style="font-size:.78rem;">Durée d'un créneau (min)</label>
+            <input type="number" id="avail-slot-duration" min="15" step="15" value="60">
+          </div>
+        </div>
+
+        <div class="account-card">
+          <h3>Horaires hebdomadaires</h3>
+          <p class="muted-note">Définissez, pour le service sélectionné, les plages horaires ouvertes à la réservation chaque jour de la semaine.</p>
+          <div id="weekly-hours-grid" class="weekly-hours-grid"></div>
+        </div>
+
+        <div class="account-card">
+          <h3>Vacances / fermetures</h3>
+          <p class="muted-note">Une période de vacances bloque la réservation pour tous les services, ces jours-là.</p>
+          <div id="vacations-list"></div>
+        </div>
+
+        <div class="account-card">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:6px;">
+            <div>
+              <h3 style="margin-bottom:4px;">Jours fériés</h3>
+              <p class="muted-note" style="margin-bottom:0;">Une date unique, qui peut se répéter chaque année. Bloque la réservation pour tous les services.</p>
+            </div>
+            <button type="button" class="btn btn--ghost btn--sm" id="open-holiday-modal">+ Jour férié</button>
+          </div>
+          <div id="holidays-list"></div>
+        </div>
+
+        <div class="account-card">
+          <h3>Pause entre les rendez-vous</h3>
+          <p class="muted-note">Une pause ajoutée automatiquement après chaque rendez-vous retire ce temps de la disponibilité publique.</p>
+
+          <label class="field-checkbox" style="margin-bottom:14px;">
+            <input type="checkbox" id="pause-enabled">
+            <span>Activer la pause automatique</span>
+          </label>
+
+          <div id="pause-config-body">
+            <div class="field-row">
+              <div class="field">
+                <label for="pause-duration-preset">Durée</label>
+                <select id="pause-duration-preset">
+                  <option value="5">5 minutes</option>
+                  <option value="10">10 minutes</option>
+                  <option value="15">15 minutes</option>
+                  <option value="20">20 minutes</option>
+                  <option value="30">30 minutes</option>
+                  <option value="45">45 minutes</option>
+                  <option value="60">60 minutes</option>
+                  <option value="custom">Personnalisée…</option>
+                </select>
+              </div>
+              <div class="field" id="pause-duration-custom-field" hidden>
+                <label for="pause-duration-custom">Minutes</label>
+                <input type="number" id="pause-duration-custom" min="1" step="1" value="15">
+              </div>
+            </div>
+
+            <div class="field" style="max-width:340px;">
+              <label for="pause-mode">Mode d'application</label>
+              <select id="pause-mode">
+                <option value="global">Identique entre tous les rendez-vous</option>
+                <option value="perService">Selon le service</option>
+                <option value="perDay">Selon le jour de la semaine</option>
+              </select>
+            </div>
+
+            <div id="pause-per-service-grid" class="weekly-hours-grid" hidden style="margin-top:10px;"></div>
+            <div id="pause-per-day-grid" class="weekly-hours-grid" hidden style="margin-top:10px;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CONTENT MANAGER ===================== -->
+    <section class="admin-panel" data-panel="content">
+      <div class="admin-header">
+        <div>
+          <h1>Contenu</h1>
+          <p>Édition de tous les textes affichés sur le site public</p>
+        </div>
+      </div>
+
+      <div class="auth__notice" data-tone="error" style="margin-bottom:22px;">
+        Simulation frontend : ce contenu est stocké dans le navigateur (localStorage) de cet
+        appareil. Les visiteurs sur d'autres appareils ne verront pas ces modifications — pour
+        une vraie publication partagée par tous, il faut un backend (ex. Supabase) qui stocke ce
+        contenu côté serveur.
+      </div>
+
+      <!-- ----- Marque / Accueil ----- -->
+      <div class="account-card">
+        <h3>Marque — Accueil</h3>
+        <div class="auth__notice" id="brand-content-notice" hidden></div>
+        <form id="brand-content-form">
+          <div class="field">
+            <label>Texte de marque (en-tête de la page d'accueil)</label>
+            <input type="text" id="cm-brand-tagline">
+          </div>
+          <button type="submit" class="auth__submit" style="max-width:220px;">Enregistrer</button>
+        </form>
+      </div>
+
+      <!-- ----- Modal "Lieu Sacré" ----- -->
+      <div class="account-card">
+        <h3>Modal "Lieu Sacré"</h3>
+        <div class="auth__notice" id="threshold-content-notice" hidden></div>
+        <form id="threshold-content-form">
+          <div class="field">
+            <label>Sur-titre (eyebrow)</label>
+            <input type="text" id="cm-threshold-eyebrow">
+          </div>
+          <div class="field">
+            <label>Titre</label>
+            <input type="text" id="cm-threshold-title">
+          </div>
+          <div class="field">
+            <label>Texte d'engagement</label>
+            <textarea id="cm-threshold-text" rows="4" style="width:100%; padding:13px 16px; border-radius:10px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.04); color:var(--ink); font-family:var(--sans); font-size:.94rem; resize:vertical;"></textarea>
+          </div>
+          <button type="submit" class="auth__submit" style="max-width:220px;">Enregistrer</button>
+        </form>
+      </div>
+
+      <!-- ----- Libellés partagés (Formules / FAQ) ----- -->
+      <div class="account-card">
+        <h3>Libellés partagés — Formules &amp; FAQ</h3>
+        <p style="font-size:.82rem; color:var(--ink-dim); margin-bottom:16px;">Ces libellés sont identiques sur les 3 pages de service.</p>
+        <div class="auth__notice" id="shared-labels-notice" hidden></div>
+        <form id="shared-labels-form">
+          <div class="field-row">
+            <div class="field">
+              <label>Sur-titre section Formules</label>
+              <input type="text" id="cm-formules-eyebrow">
+            </div>
+            <div class="field">
+              <label>Titre section Formules</label>
+              <input type="text" id="cm-formules-title">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Sur-titre section FAQ</label>
+              <input type="text" id="cm-faq-eyebrow">
+            </div>
+            <div class="field">
+              <label>Titre section FAQ</label>
+              <input type="text" id="cm-faq-title">
+            </div>
+          </div>
+          <button type="submit" class="auth__submit" style="max-width:220px;">Enregistrer</button>
+        </form>
+      </div>
+
+      <!-- ----- Contenu détaillé par page de service ----- -->
+      <div class="account-card">
+        <h3>Pages de service</h3>
+        <div class="admin-toolbar" style="margin-bottom:22px;">
+          <select id="content-service-filter">
+            <option value="services-energetiques">Soins Énergétiques</option>
+            <option value="accompagnement">Accompagnement 1:1</option>
+          </select>
+        </div>
+
+        <div class="auth__notice" id="service-page-notice" hidden></div>
+
+        <form id="service-page-form">
+          <div class="field">
+            <label>Introduction (paragraphe sous le titre — laissez une ligne vide entre les paragraphes)</label>
+            <textarea id="cm-sp-intro" rows="4" style="width:100%; padding:13px 16px; border-radius:10px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.04); color:var(--ink); font-family:var(--sans); font-size:.94rem; resize:vertical;"></textarea>
+          </div>
+
+          <h4 style="margin:26px 0 14px; font-family:var(--serif); font-size:1rem;">Bande d'appel à l'action</h4>
+          <div class="field"><label>Titre</label><input type="text" id="cm-sp-cta-title"></div>
+          <div class="field"><label>Texte</label><input type="text" id="cm-sp-cta-text"></div>
+          <div class="field"><label>Texte du bouton</label><input type="text" id="cm-sp-cta-button"></div>
+
+          <button type="submit" class="auth__submit" style="max-width:260px;">Enregistrer cette page</button>
+        </form>
+      </div>
+
+      <!-- ----- Sections de la page (texte libre ou liste) — liste dynamique ----- -->
+      <div class="account-card">
+        <div class="cm-list-header">
+          <h3>Sections de la page</h3>
+          <button type="button" class="btn btn--gold btn--sm" id="cm-add-step">+ Ajouter une section</button>
+        </div>
+        <p class="muted-note">S'applique à la page de service sélectionnée ci-dessus. Chaque section peut être un bloc de paragraphes ou une liste à puces, avec sur-titre, intro et conclusion facultatifs — c'est ici que se modifient tous les textes descriptifs de la page (avant/pendant/après le soin, etc.).</p>
+        <div id="cm-steps-list" class="cm-block-list"></div>
+      </div>
+
+      <!-- ----- FAQ — liste dynamique ----- -->
+      <div class="account-card">
+        <div class="cm-list-header">
+          <h3>FAQ — Avant de réserver</h3>
+          <button type="button" class="btn btn--gold btn--sm" id="cm-add-faq">+ Ajouter une question</button>
+        </div>
+        <p class="muted-note">S'applique à la page de service sélectionnée ci-dessus.</p>
+        <div id="cm-faq-list" class="cm-block-list"></div>
+      </div>
+
+      <!-- ----- Présentation de Pierre-Olivier (page histoire.html) ----- -->
+      <div class="account-card" id="bio-cms-card">
+        <div class="cm-list-header">
+          <h3>Présentation de Pierre-Olivier</h3>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn btn--gold btn--sm" id="bio-add-section">+ Section</button>
+            <button type="button" class="btn btn--ghost btn--sm" id="bio-save-btn">Enregistrer tout</button>
+            <a href="histoire.html" target="_blank" class="btn btn--ghost btn--sm">Voir la page →</a>
+          </div>
+        </div>
+        <div class="account-card" style="margin-top:14px; margin-bottom:4px; background:rgba(201,165,75,.06); border-color:rgba(201,165,75,.25);">
+          <p style="font-size:.86rem; color:#ffffff; font-weight:600; margin-bottom:10px;">Nouveau texte « Je suis Pierre-Olivier » — remplace le titre, le sous-titre et toutes les sections ci-dessous par le nouveau texte fourni. Votre photo n'est pas touchée. Rien n'est envoyé au serveur tant que vous ne cliquez pas ensuite sur « Enregistrer tout ».</p>
+          <button type="button" class="btn btn--gold btn--sm" id="bio-load-new-text">Charger le nouveau texte « Je suis Pierre-Olivier »</button>
+        </div>
+        <div class="auth__notice" id="bio-cms-notice" hidden></div>
+
+        <!-- En-tête de la page histoire -->
+        <div class="account-card" style="margin-top:18px; background:rgba(255,255,255,.02);">
+          <h4 style="margin-bottom:14px; font-size:.9rem; color:var(--ink-dim);">En-tête de la page</h4>
+          <div class="field">
+            <label for="bio-hero-title">Titre principal</label>
+            <input type="text" id="bio-hero-title" placeholder="Mon histoire">
+          </div>
+          <div class="field">
+            <label for="bio-hero-subtitle">Sous-titre</label>
+            <input type="text" id="bio-hero-subtitle" placeholder="Guérisseur, accompagnateur du vivant…">
+          </div>
+        </div>
+
+        <!-- Photo -->
+        <div class="account-card" style="margin-top:14px; background:rgba(255,255,255,.02);">
+          <h4 style="margin-bottom:14px; font-size:.9rem; color:var(--ink-dim);">Photo de Pierre-Olivier</h4>
+          <div class="profile-photo-row">
+            <div id="bio-photo-preview"></div>
+            <div class="profile-photo-row__actions">
+              <button type="button" class="btn btn--ghost btn--sm" id="bio-photo-upload-btn">Changer la photo</button>
+              <button type="button" class="btn btn--ghost btn--sm" id="bio-photo-delete-btn" hidden>Supprimer la photo</button>
+              <input type="file" id="bio-photo-file" accept="image/jpeg,image/jpg,image/png,image/webp" style="display:none;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Sections dynamiques -->
+        <div id="bio-cms-sections" style="margin-top:18px; display:flex; flex-direction:column; gap:14px;"></div>
+      </div>
+
+    </section>
+
+    <!-- ===================== SERVICES MANAGER ===================== -->
+    <section class="admin-panel" data-panel="services">
+      <div class="admin-header">
+        <div>
+          <h1>Services</h1>
+          <p>Titre, présentation et identité visuelle des 3 soins proposés</p>
+        </div>
+      </div>
+
+      <div id="services-cards-container" style="display:flex; flex-direction:column; gap:18px;"></div>
+    </section>
+
+    <!-- ===================== PRICING MANAGER ===================== -->
+    <section class="admin-panel" data-panel="pricing">
+      <div class="admin-header">
+        <div>
+          <h1>Tarifs</h1>
+          <p>Gestion des formules et de leurs prix, visibles en temps réel sur le site public</p>
+        </div>
+        <button class="btn btn--gold btn--sm" id="open-new-formula">+ Nouvelle formule</button>
+      </div>
+
+      <div class="admin-toolbar">
+        <select id="pricing-service-filter">
+          <option value="services-energetiques">Soins Énergétiques</option>
+          <option value="accompagnement">Accompagnement 1:1</option>
+        </select>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Ordre</th><th>Titre</th><th>Prix</th><th>Durée</th><th>Mis en avant</th><th></th></tr>
+          </thead>
+          <tbody id="pricing-tbody"></tbody>
+        </table>
+      </div>
+      <div class="admin-empty" id="pricing-empty" hidden>Aucune formule pour ce service.</div>
+    </section>
+
+    <!-- ===================== PAIEMENTS (SIMULATION) ===================== -->
+    <section class="admin-panel" data-panel="payments">
+      <div class="admin-header">
+        <div>
+          <h1>Paiements</h1>
+          <p>Toutes les transactions — Soins Énergétiques, Accompagnement 1:1</p>
+        </div>
+      </div>
+
+      <div class="auth__notice" data-tone="error" style="margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;">
+        <span>Le webhook Stripe (signature vérifiée) est prêt côté serveur, mais le statut ci-dessous reste écrit depuis le navigateur dans localStorage tant qu'une base de données réelle (migration Supabase) ne fait pas encore autorité.</span>
+        <span id="stripe-mode-indicator" style="white-space:nowrap; font-weight:600;">Mode Stripe : vérification…</span>
+      </div>
+
+      <div class="admin-toolbar">
+        <input type="search" id="payments-search" placeholder="Rechercher par client…">
+        <select id="payments-status-filter">
+          <option value="">Tous les statuts</option>
+          <option value="waiting">En attente</option>
+          <option value="paid">Payé</option>
+          <option value="refused">Refusé</option>
+          <option value="cancelled">Annulé</option>
+        </select>
+        <select id="payments-method-filter">
+          <option value="">Toutes les méthodes</option>
+          <option value="interac">Interac</option>
+          <option value="stripe">Stripe</option>
+        </select>
+        <button class="btn btn--ghost btn--sm" id="payments-export-csv">Exporter CSV</button>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Client</th><th>Service / Formule</th><th>RDV</th><th>Montant</th><th>Méthode</th><th>Statut</th><th>Date</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="payments-tbody"></tbody>
+        </table>
+      </div>
+      <div class="admin-empty" id="payments-empty" hidden>Aucune transaction pour le moment.</div>
+
+      <!-- Paramètres de paiement -->
+      <div class="account-card" style="margin-top:28px;">
+        <h3>Paramètres de paiement</h3>
+        <div class="auth__notice" id="pay-settings-notice" hidden></div>
+
+        <div class="field-row" style="margin-bottom:18px;">
+          <div class="field">
+            <label for="pay-interac-email">Courriel Interac (destinataire)</label>
+            <input type="email" id="pay-interac-email" value="pierreolivierdoucet.quantique@gmail.com">
+          </div>
+        </div>
+
+        <div class="field--checkbox" style="margin-bottom:14px;">
+          <input type="checkbox" id="pay-taxes-enabled">
+          <label for="pay-taxes-enabled">Activer les taxes (TPS + TVQ)</label>
+        </div>
+        <div id="pay-tax-rates" hidden>
+          <div class="field-row">
+            <div class="field">
+              <label for="pay-tps-rate">Taux TPS (%)</label>
+              <input type="number" id="pay-tps-rate" value="5" step="0.001" min="0">
+            </div>
+            <div class="field">
+              <label for="pay-tvq-rate">Taux TVQ (%)</label>
+              <input type="number" id="pay-tvq-rate" value="9.975" step="0.001" min="0">
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn btn--ghost btn--sm" id="pay-settings-save">Enregistrer les paramètres</button>
+      </div>
+    </section>
+
+
+    <!-- ===================== TÉMOIGNAGES ===================== -->
+    <section class="admin-panel" data-panel="testimonials">
+      <div class="admin-header">
+        <div>
+          <h1>Témoignages</h1>
+          <p>Modération des témoignages soumis par les clients avant publication</p>
+        </div>
+      </div>
+
+      <div class="account-card">
+        <div class="cm-list-header">
+          <h3>Filtrer</h3>
+        </div>
+        <div class="cal-view-switch" role="tablist" aria-label="Filtrer les témoignages" id="testi-status-tabs">
+          <button type="button" role="tab" aria-selected="true" data-status="pending">En attente</button>
+          <button type="button" role="tab" aria-selected="false" data-status="approved">Approuvés</button>
+          <button type="button" role="tab" aria-selected="false" data-status="rejected">Rejetés</button>
+          <button type="button" role="tab" aria-selected="false" data-status="all">Tous</button>
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Client</th><th>Service</th><th>Note</th><th>Date</th>
+                <th>Témoignage</th><th>Statut</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="testi-tbody"></tbody>
+          </table>
+        </div>
+        <div class="admin-empty" id="testi-empty" hidden>Aucun témoignage dans cette catégorie.</div>
+      </div>
+    </section>
+
+    <!-- ===================== MESSENGER ===================== -->
+    <section class="admin-panel" data-panel="messenger">
+      <div class="admin-header">
+        <div>
+          <h1>Messagerie</h1>
+          <p>Échanges directs avec les clients</p>
+        </div>
+      </div>
+
+      <div class="messenger-layout">
+        <div class="messenger-list" id="messenger-conv-list"></div>
+        <div class="messenger-thread" id="messenger-thread">
+          <div class="messenger-empty-thread">Sélectionnez une conversation</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== NOTIFICATIONS ===================== -->
+    <section class="admin-panel" data-panel="notifications">
+      <div class="admin-header">
+        <div>
+          <h1>Notifications</h1>
+          <p>Réglages des emails automatiques et journal des envois</p>
+        </div>
+      </div>
+
+      <div class="auth__notice" data-tone="error" style="background:rgba(201,165,75,.1); border-color:rgba(201,165,75,.3); color:var(--gold-soft);">
+        Les courriels de confirmation, annulation, replanification et paiement sont réellement
+        envoyés via Resend (voir email-service.js). Le journal ci-dessous reste un historique
+        local en plus de l'envoi réel — il ne le remplace pas.
+      </div>
+
+      <div class="account-card">
+        <h3>Rappels de rendez-vous</h3>
+        <p style="font-size:.86rem; color:var(--ink-dim); margin-bottom:14px;">
+          Envoie un rappel réel (Resend) à chaque client ayant un rendez-vous confirmé pour
+          demain, qui n'a pas déjà reçu de rappel. <strong>Ceci doit être déclenché manuellement</strong>
+          tant qu'aucune base de données réelle (migration Supabase) ne permet une tâche planifiée
+          côté serveur — voir PLAN-MIGRATION-SUPABASE.md.
+        </p>
+        <button class="btn btn--gold btn--sm" id="send-reminders-btn">Envoyer les rappels de demain</button>
+        <span id="send-reminders-result" style="margin-left:12px; font-size:.84rem; color:var(--ink-dim);"></span>
+      </div>
+
+      <div class="account-card">
+        <h3>Emails automatiques</h3>
+        <div id="notif-settings-list" style="display:flex; flex-direction:column; gap:14px;"></div>
+      </div>
+
+      <div class="account-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+          <h3 style="margin:0;">Journal des envois simulés</h3>
+          <button class="btn btn--ghost btn--sm" id="notif-clear-log">Vider le journal</button>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Date</th><th>Canal</th><th>Type</th><th>Destinataire</th><th>Sujet</th><th></th></tr>
+            </thead>
+            <tbody id="notif-log-tbody"></tbody>
+          </table>
+        </div>
+        <div class="admin-empty" id="notif-log-empty" hidden>Aucune notification dans le journal.</div>
+      </div>
+    </section>
+
+    <!-- ===================== TEMPLATES EMAIL ===================== -->
+    <section class="admin-panel" data-panel="email-templates">
+      <div class="admin-header">
+        <div><h1>Templates Email</h1><p>Éditez le contenu de tous les emails envoyés automatiquement.</p></div>
+      </div>
+      <div class="auth__notice" data-tone="error" style="margin-bottom:18px;">
+        Simulation frontend — les emails ne sont pas réellement envoyés. Pour l'envoi réel, connecter un service type SendGrid via un backend (Supabase prévu).
+      </div>
+
+      <!-- Statut connexion API -->
+      <div class="account-card" style="margin-bottom:18px;">
+        <h3>Connexion serveur email</h3>
+        <div class="auth__notice" id="et-api-status" hidden></div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button type="button" class="btn btn--ghost btn--sm" id="et-api-health">Vérifier la connexion</button>
+          <button type="button" class="btn btn--ghost btn--sm" id="et-api-test-send">Envoyer un email de test</button>
+        </div>
+      </div>
+
+      <!-- Variables disponibles -->
+      <div class="account-card" style="margin-bottom:18px;">
+        <h3>Variables disponibles</h3>
+        <p class="muted-note" style="margin-bottom:10px;">Copiez-collez ces variables dans vos sujets et corps d'emails :</p>
+        <div id="et-vars-list" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+      </div>
+
+      <!-- Mise en page globale -->
+      <div class="account-card" style="margin-bottom:18px;">
+        <h3>Mise en page globale</h3>
+        <div class="auth__notice" id="et-layout-notice" hidden></div>
+        <div class="field-row">
+          <div class="field"><label for="et-signature">Signature</label><textarea id="et-signature" rows="3"></textarea></div>
+          <div class="field"><label for="et-footer-text">Texte de pied de page</label><input type="text" id="et-footer-text"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="et-primary-color">Couleur principale</label><input type="color" id="et-primary-color"></div>
+          <div class="field"><label for="et-accent-color">Couleur accentuée</label><input type="color" id="et-accent-color"></div>
+        </div>
+        <button type="button" class="btn btn--gold btn--sm" id="et-layout-save">Enregistrer la mise en page</button>
+      </div>
+
+      <!-- Sélection du template -->
+      <div class="account-card">
+        <div class="field" style="margin-bottom:18px;">
+          <label for="et-template-select">Template à éditer</label>
+          <select id="et-template-select"></select>
+        </div>
+        <div id="et-template-editor">
+          <div class="auth__notice" id="et-template-notice" hidden></div>
+          <div class="field--checkbox" style="margin-bottom:14px;">
+            <input type="checkbox" id="et-template-enabled">
+            <label for="et-template-enabled">Activer cet email</label>
+          </div>
+          <div class="field"><label for="et-template-subject">Sujet</label><input type="text" id="et-template-subject"></div>
+          <div class="field"><label for="et-template-body">Corps du message</label><textarea id="et-template-body" rows="10"></textarea></div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+            <button type="button" class="btn btn--gold btn--sm" id="et-template-save">Enregistrer</button>
+            <button type="button" class="btn btn--ghost btn--sm" id="et-template-preview">Aperçu</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aperçu -->
+      <div class="account-card" id="et-preview-card" hidden>
+        <h3>Aperçu du message</h3>
+        <p class="muted-note" style="margin-bottom:10px;" id="et-preview-subject-label"></p>
+        <pre id="et-preview-body" style="white-space:pre-wrap; font-family:var(--garamond); line-height:1.7; font-size:.95rem; padding:16px; background:rgba(255,255,255,.03); border-radius:10px; border:1px solid rgba(255,255,255,.08);"></pre>
+        <button type="button" class="btn btn--ghost btn--sm" style="margin-top:12px;" id="et-preview-close">Fermer l'aperçu</button>
+      </div>
+    </section>
+
+    <!-- ===================== AUTOMATISATIONS ===================== -->
+    <section class="admin-panel" data-panel="automations">
+      <div class="admin-header">
+        <div><h1>Automatisations</h1><p>Configurez les déclencheurs d'emails automatiques.</p></div>
+      </div>
+      <div class="auth__notice" data-tone="error" style="margin-bottom:18px;">
+        Simulation frontend — les délais et l'envoi réel nécessitent un backend serveur. Les paramètres sont sauvegardés et seront utilisés lors de la migration Supabase.
+      </div>
+      <div class="account-card">
+        <div class="auth__notice" id="auto-notice" hidden></div>
+        <div id="automations-list" style="display:flex; flex-direction:column; gap:14px;"></div>
+      </div>
+    </section>
+
+    <!-- ===================== PARAMÈTRES DU SITE ===================== -->
+    <section class="admin-panel" data-panel="site-settings">
+      <div class="admin-header">
+        <div><h1>Paramètres du site</h1><p>Contrôle total sur l'identité, les coordonnées et les règles métier.</p></div>
+      </div>
+
+      <!-- Marque -->
+      <div class="account-card" style="margin-bottom:18px;">
+        <h3>Identité de la marque</h3>
+        <div class="auth__notice" id="ss-brand-notice" hidden></div>
+        <div class="field-row">
+          <div class="field"><label for="ss-site-name">Nom du site</label><input type="text" id="ss-site-name"></div>
+          <div class="field"><label for="ss-tagline">Slogan</label><input type="text" id="ss-tagline"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="ss-primary-color">Couleur principale</label><input type="color" id="ss-primary-color"></div>
+          <div class="field"><label for="ss-accent-color">Couleur dorée</label><input type="color" id="ss-accent-color"></div>
+          <div class="field"><label for="ss-bg-color">Couleur de fond</label><input type="color" id="ss-bg-color"></div>
+        </div>
+        <button type="button" class="btn btn--gold btn--sm" id="ss-brand-save">Enregistrer la marque</button>
+      </div>
+
+      <!-- Contact -->
+      <div class="account-card" style="margin-bottom:18px;">
+        <h3>Coordonnées</h3>
+        <div class="auth__notice" id="ss-contact-notice" hidden></div>
+        <div class="field-row">
+          <div class="field"><label for="ss-email">Courriel</label><input type="email" id="ss-email"></div>
+          <div class="field"><label for="ss-phone">Téléphone</label><input type="tel" id="ss-phone"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="ss-city">Ville</label><input type="text" id="ss-city"></div>
+          <div class="field"><label for="ss-province">Province</label><input type="text" id="ss-province"></div>
+        </div>
+        <button type="button" class="btn btn--gold btn--sm" id="ss-contact-save">Enregistrer les coordonnées</button>
+      </div>
+
+      <!-- Réseaux sociaux -->
+      <div class="account-card" style="margin-bottom:18px;">
+        <h3>Réseaux sociaux</h3>
+        <div class="auth__notice" id="ss-social-notice" hidden></div>
+        <div class="field-row">
+          <div class="field"><label for="ss-facebook">Facebook</label><input type="url" id="ss-facebook" placeholder="https://facebook.com/..."></div>
+          <div class="field"><label for="ss-instagram">Instagram</label><input type="url" id="ss-instagram" placeholder="https://instagram.com/..."></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="ss-youtube">YouTube</label><input type="url" id="ss-youtube" placeholder="https://youtube.com/..."></div>
+          <div class="field"><label for="ss-tiktok">TikTok</label><input type="url" id="ss-tiktok" placeholder="https://tiktok.com/..."></div>
+        </div>
+        <button type="button" class="btn btn--gold btn--sm" id="ss-social-save">Enregistrer les réseaux</button>
+      </div>
+
+      <!-- SEO -->
+      <div class="account-card" style="margin-bottom:18px;">
+        <h3>SEO — Référencement</h3>
+        <div class="auth__notice" id="ss-seo-notice" hidden></div>
+        <div class="field"><label for="ss-meta-title">Titre de l'onglet navigateur</label><input type="text" id="ss-meta-title"></div>
+        <div class="field"><label for="ss-meta-desc">Description (Google)</label><textarea id="ss-meta-desc" rows="3" maxlength="160"></textarea></div>
+        <button type="button" class="btn btn--gold btn--sm" id="ss-seo-save">Enregistrer le SEO</button>
+      </div>
+
+      <!-- Règles métier -->
+      <div class="account-card">
+        <h3>Règles métier</h3>
+        <div class="auth__notice" id="ss-business-notice" hidden></div>
+        <div class="field-row">
+          <div class="field"><label for="ss-cancel-hours">Annulation min. (heures)</label><input type="number" id="ss-cancel-hours" min="0"></div>
+          <div class="field"><label for="ss-max-bookings-day">Max rdv / jour</label><input type="number" id="ss-max-bookings-day" min="1"></div>
+          <div class="field"><label for="ss-deposit-pct">Acompte (%)</label><input type="number" id="ss-deposit-pct" min="0" max="100"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="ss-currency">Devise</label><select id="ss-currency"><option value="CAD">CAD — Dollar canadien</option><option value="USD">USD — Dollar américain</option><option value="EUR">EUR — Euro</option></select></div>
+          <div class="field"><label for="ss-timezone">Fuseau horaire</label><select id="ss-timezone"><option value="America/Toronto">America/Toronto (EST)</option><option value="America/Montreal">America/Montreal</option><option value="America/Vancouver">America/Vancouver (PST)</option><option value="Europe/Paris">Europe/Paris (CET)</option></select></div>
+        </div>
+        <button type="button" class="btn btn--gold btn--sm" id="ss-business-save">Enregistrer les règles</button>
+      </div>
+
+      <!-- Intégrations : Zoom, Google Calendar, Resend, Stripe -->
+      <div class="account-card" style="margin-top:18px;">
+        <h3>Intégrations</h3>
+        <p style="font-size:.82rem; color:var(--ink-dim); margin-bottom:14px;">
+          Statut des services externes utilisés par la confirmation automatique des rendez-vous
+          (réunion Zoom, événement Google Calendar, courriel de confirmation).
+        </p>
+        <div id="integrations-status-list"></div>
+        <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+          <button type="button" class="btn btn--ghost btn--sm" id="integrations-refresh-btn">Actualiser le statut</button>
+          <button type="button" class="btn btn--gold btn--sm" id="google-connect-btn">Connecter Google Calendar</button>
+        </div>
+        <div class="auth__notice" id="integrations-notice" hidden></div>
+      </div>
+    </section>
+
+    <!-- ===================== GESTION DES BOUTONS ===================== -->
+    <section class="admin-panel" data-panel="buttons">
+      <div class="admin-header">
+        <div>
+          <h1>Gestion des boutons</h1>
+          <p>Active ou désactive chaque bouton de la page d'accueil. Un bouton désactivé disparaît
+             complètement de la page (aucun espace réservé) et sa page cible n'est plus accessible
+             directement — les visiteurs qui tentent d'y accéder sont renvoyés vers l'accueil.</p>
+        </div>
+      </div>
+
+      <div class="account-card">
+        <div id="button-settings-list"></div>
+      </div>
+    </section>
+
+    <!-- ===================== MÉDIATHÈQUE ===================== -->
+    <section class="admin-panel" data-panel="media">
+      <div class="admin-header">
+        <div><h1>Médiathèque</h1><p>Gérez toutes les images du site depuis un seul endroit.</p></div>
+        <div style="display:flex; gap:10px;">
+          <button type="button" class="btn btn--gold btn--sm" id="media-upload-btn">+ Ajouter un fichier</button>
+          <input type="file" id="media-file-input" accept="image/jpeg,image/png,image/webp" style="display:none;" multiple>
+        </div>
+      </div>
+      <div class="auth__notice" data-tone="error" style="margin-bottom:18px;">
+        Les images sont stockées en base64 dans la base de données du serveur (via /api/admin/content). Taille totale raisonnable recommandée par fichier (~2-3 Mo) ; pour un très grand volume d'images, un vrai service de stockage de fichiers (S3, Supabase Storage) resterait préférable.
+      </div>
+      <div class="auth__notice" id="media-notice" hidden></div>
+
+      <div class="admin-toolbar">
+        <input type="search" id="media-search" placeholder="Rechercher…">
+        <select id="media-folder-filter">
+          <option value="">Tous les dossiers</option>
+          <option value="general">Général</option>
+          <option value="hero">Images hero</option>
+          <option value="services">Services</option>
+          <option value="profil">Profil</option>
+        </select>
+      </div>
+
+      <div id="media-grid" class="media-grid"></div>
+      <div class="admin-empty" id="media-empty" hidden>Aucun fichier dans la médiathèque.</div>
+
+      <!-- Modal de détail -->
+      <div class="modal-veil" id="media-detail-veil" hidden>
+        <div class="modal-box" style="max-width:520px;">
+          <h3>Détail du fichier</h3>
+          <img id="media-detail-img" src="" alt="" style="width:100%; border-radius:10px; margin-bottom:16px; max-height:280px; object-fit:contain;">
+          <div class="field"><label for="media-detail-name">Nom</label><input type="text" id="media-detail-name"></div>
+          <div class="field"><label for="media-detail-alt">Texte alternatif (accessibilité)</label><input type="text" id="media-detail-alt"></div>
+          <div class="field"><label for="media-detail-folder">Dossier</label>
+            <select id="media-detail-folder">
+              <option value="general">Général</option>
+              <option value="hero">Images hero</option>
+              <option value="services">Services</option>
+              <option value="profil">Profil</option>
+            </select>
+          </div>
+          <div style="background:rgba(255,255,255,.03); border-radius:8px; padding:10px; font-size:.78rem; color:var(--ink-dim); margin-bottom:14px;" id="media-detail-url-wrap">
+            <strong>URL à utiliser :</strong><br>
+            <code id="media-detail-url" style="word-break:break-all; color:var(--gold-soft);"></code>
+          </div>
+          <div class="modal-box__actions">
+            <button type="button" class="modal-box__cancel" id="media-detail-close">Fermer</button>
+            <button type="button" class="modal-box__save" id="media-detail-save">Enregistrer</button>
+            <button type="button" class="btn btn--ghost btn--sm" id="media-detail-delete" style="color:#f0a06b;">Supprimer</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== JOURNAL D'AUDIT ===================== -->
+    <section class="admin-panel" data-panel="audit">
+      <div class="admin-header">
+        <div><h1>Journal d'audit</h1><p>Toutes les actions effectuées dans l'administration.</p></div>
+        <button type="button" class="btn btn--ghost btn--sm" id="audit-clear-btn">Vider le journal</button>
+      </div>
+      <div class="auth__notice" id="audit-notice" hidden></div>
+      <div class="admin-toolbar">
+        <input type="search" id="audit-search" placeholder="Rechercher module, action…">
+        <select id="audit-module-filter">
+          <option value="">Tous les modules</option>
+          <option value="email-templates">Templates Email</option>
+          <option value="automations">Automatisations</option>
+          <option value="site-settings">Paramètres</option>
+          <option value="media">Médiathèque</option>
+          <option value="pricing">Tarifs</option>
+          <option value="content">Contenu</option>
+          <option value="clients">Clients</option>
+          <option value="payments">Paiements</option>
+        </select>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Date / Heure</th><th>Module</th><th>Action</th><th>Ancienne valeur</th><th>Nouvelle valeur</th></tr>
+          </thead>
+          <tbody id="audit-tbody"></tbody>
+        </table>
+      </div>
+      <div class="admin-empty" id="audit-empty" hidden>Aucune action enregistrée.</div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ===================== CLIENT DETAIL DRAWER ===================== -->
+<div class="drawer-veil" id="client-drawer-veil" hidden>
+  <div class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-client-name">
+    <button class="drawer__close" id="client-drawer-close" aria-label="Fermer le panneau client">×</button>
+    <div class="drawer__avatar-row">
+      <div id="drawer-client-avatar"></div>
+      <div>
+        <h2 id="drawer-client-name" style="margin:0;">—</h2>
+        <p class="drawer__sub" id="drawer-client-email" style="margin:0;">—</p>
+      </div>
+    </div>
+
+    <div class="drawer__section">
+      <h4>Informations</h4>
+      <div class="drawer__field"><span>Âge</span><span id="drawer-client-age">—</span></div>
+      <div class="drawer__field"><span>Téléphone</span><span id="drawer-client-phone">—</span></div>
+      <div class="drawer__field"><span>Inscrit le</span><span id="drawer-client-date">—</span></div>
+      <div class="drawer__field"><span>Statut du compte</span><span id="drawer-client-block-status">—</span></div>
+    </div>
+
+    <div class="drawer__section" id="drawer-unblock-section" hidden>
+      <button class="btn btn--ghost btn--sm" id="drawer-unblock-client" style="width:100%;">Débloquer ce compte</button>
+    </div>
+
+    <div class="drawer__section">
+      <h4>Rendez-vous</h4>
+      <div id="drawer-client-appts"></div>
+    </div>
+
+    <div class="danger-zone">
+      <h3>Supprimer ce client</h3>
+      <p>Cette action supprime aussi tous ses rendez-vous. Elle est irréversible.</p>
+      <button class="btn--danger" id="drawer-delete-client">Supprimer le client</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== NEW / EDIT APPOINTMENT MODAL ===================== -->
+<div class="modal-veil" id="appt-modal-veil" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="appt-modal-title">
+    <h3 id="appt-modal-title">Nouveau rendez-vous</h3>
+    <div class="auth__notice" id="appt-modal-notice" hidden></div>
+    <form id="appt-form" novalidate>
+      <div class="field">
+        <label for="appt-client">Client</label>
+        <select id="appt-client" required></select>
+      </div>
+      <div class="field">
+        <label for="appt-service">Service</label>
+        <select id="appt-service" required>
+          <option value="Soins Énergétiques">Soins Énergétiques</option>
+          <option value="Accompagnement 1:1">Accompagnement 1:1</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="appt-date">Date</label>
+          <input type="date" id="appt-date" required>
+        </div>
+        <div class="field">
+          <label for="appt-time">Heure (24h)</label>
+          <input type="text" id="appt-time" class="po-time-input" inputmode="numeric"
+                 placeholder="HH:mm" maxlength="5" autocomplete="off" required>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="appt-duration">Durée (min)</label>
+          <input type="number" id="appt-duration" min="15" step="15" value="60">
+        </div>
+        <div class="field">
+          <label for="appt-status">Statut</label>
+          <select id="appt-status">
+            <option value="pending">En attente</option>
+            <option value="awaiting_confirmation">Attente de confirmation client</option>
+            <option value="confirmed">Confirmé</option>
+            <option value="declined">Refusé</option>
+            <option value="rescheduled">Replanifié</option>
+            <option value="cancelled">Annulé</option>
+            <option value="completed">Terminé</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" id="appt-recurring-field">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="appt-recurring-toggle" style="width:auto;">
+          <span>Faire de ce rendez-vous une série récurrente</span>
+        </label>
+        <div class="field-row" id="appt-recurring-options" hidden style="margin-top:10px;">
+          <div class="field">
+            <label for="appt-recurring-frequency">Fréquence</label>
+            <select id="appt-recurring-frequency">
+              <option value="weekly">Chaque semaine</option>
+              <option value="monthly">Chaque mois</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="appt-recurring-count">Nombre d'occurrences</label>
+            <input type="number" id="appt-recurring-count" min="2" max="52" value="4">
+          </div>
+        </div>
+      </div>
+      <input type="hidden" id="appt-editing-id">
+      <div class="modal-box__actions">
+        <button type="button" class="modal-box__cancel" id="appt-modal-cancel">Annuler</button>
+        <button type="submit" class="modal-box__save">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== VACATION MODAL ===================== -->
+<div class="modal-veil" id="vacation-modal-veil" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="vacation-modal-title">
+    <h3 id="vacation-modal-title">Ajouter une période de vacances</h3>
+    <div class="auth__notice" id="vacation-modal-notice" hidden></div>
+    <form id="vacation-form" novalidate>
+      <div class="field-row">
+        <div class="field">
+          <label for="vacation-start">Du</label>
+          <input type="date" id="vacation-start" required>
+        </div>
+        <div class="field">
+          <label for="vacation-end">Au</label>
+          <input type="date" id="vacation-end" required>
+        </div>
+      </div>
+      <div class="field">
+        <label for="vacation-label">Note (facultatif)</label>
+        <input type="text" id="vacation-label" placeholder="Ex. Vacances d'été">
+      </div>
+      <div class="modal-box__actions">
+        <button type="button" class="modal-box__cancel" id="vacation-modal-cancel">Annuler</button>
+        <button type="submit" class="modal-box__save">Ajouter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== HOLIDAY MODAL ===================== -->
+<div class="modal-veil" id="holiday-modal-veil" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="holiday-modal-title">
+    <h3 id="holiday-modal-title">Ajouter un jour férié</h3>
+    <div class="auth__notice" id="holiday-modal-notice" hidden></div>
+    <form id="holiday-form" novalidate>
+      <div class="field">
+        <label for="holiday-date">Date</label>
+        <input type="date" id="holiday-date" required>
+      </div>
+      <div class="field">
+        <label for="holiday-label">Note (facultatif)</label>
+        <input type="text" id="holiday-label" placeholder="Ex. Noël">
+      </div>
+      <label class="field-checkbox">
+        <input type="checkbox" id="holiday-recurring">
+        <span>Se répète chaque année à cette date</span>
+      </label>
+      <div class="modal-box__actions">
+        <button type="button" class="modal-box__cancel" id="holiday-modal-cancel">Annuler</button>
+        <button type="submit" class="modal-box__save">Ajouter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== BLOCK TIME SLOT MODAL ===================== -->
+<div class="modal-veil" id="block-modal-veil" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="block-modal-title">
+    <h3 id="block-modal-title">Bloquer un créneau</h3>
+    <div class="auth__notice" id="block-modal-notice" hidden></div>
+    <form id="block-form" novalidate>
+      <div class="field-row">
+        <div class="field">
+          <label for="block-date">Date</label>
+          <input type="date" id="block-date" required>
+        </div>
+        <div class="field">
+          <label for="block-time">Heure 24h (laisser vide pour bloquer toute la journée)</label>
+          <input type="text" id="block-time" class="po-time-input" inputmode="numeric"
+                 placeholder="HH:mm" maxlength="5" autocomplete="off">
+        </div>
+      </div>
+      <div class="field">
+        <label for="block-duration">Durée (min)</label>
+        <input type="number" id="block-duration" min="15" step="15" value="60">
+      </div>
+      <div class="field">
+        <label for="block-label">Motif (facultatif)</label>
+        <input type="text" id="block-label" placeholder="Ex. Indisponible">
+      </div>
+      <div class="modal-box__actions">
+        <button type="button" class="modal-box__cancel" id="block-modal-cancel">Annuler</button>
+        <button type="submit" class="modal-box__save">Bloquer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== NEW / EDIT FORMULA MODAL ===================== -->
+<div class="modal-veil" id="formula-modal-veil" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="formula-modal-title">
+    <h3 id="formula-modal-title">Nouvelle formule</h3>
+    <div class="auth__notice" id="formula-modal-notice" hidden></div>
+    <form id="formula-form" novalidate>
+      <div class="field">
+        <label for="formula-title">Titre</label>
+        <input type="text" id="formula-title" required>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="formula-price">Prix (CAD)</label>
+          <input type="number" id="formula-price" min="0" step="0.01" required>
+        </div>
+        <div class="field">
+          <label for="formula-duration">Durée</label>
+          <input type="text" id="formula-duration" placeholder="ex: 75 min" required>
+        </div>
+      </div>
+      <div class="field">
+        <label for="formula-description">Description</label>
+        <input type="text" id="formula-description" required>
+      </div>
+      <div class="field field--checkbox">
+        <input type="checkbox" id="formula-featured">
+        <label for="formula-featured">Mettre en avant cette formule ("Le plus choisi")</label>
+      </div>
+      <input type="hidden" id="formula-editing-id">
+      <input type="hidden" id="formula-service-id">
+      <div class="modal-box__actions">
+        <button type="button" class="modal-box__cancel" id="formula-modal-cancel">Annuler</button>
+        <button type="submit" class="modal-box__save">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== NOTIFICATION DETAIL MODAL ===================== -->
+<div class="modal-veil" id="notif-detail-veil" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="notif-detail-subject">
+    <h3 id="notif-detail-subject">—</h3>
+    <p style="font-size:.82rem; color:var(--ink-dim); margin-bottom:14px;" id="notif-detail-meta">—</p>
+    <p style="font-size:.9rem; color:var(--ink); white-space:pre-line; line-height:1.6; max-height:300px; overflow-y:auto;" id="notif-detail-body">—</p>
+    <div class="modal-box__actions">
+      <button type="button" class="modal-box__cancel" id="notif-detail-close" style="flex:1;">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== DELETE CONFIRM (générique) ===================== -->
+<div class="modal-veil" id="confirm-modal-veil" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+    <h3 id="confirm-modal-title">Confirmer</h3>
+    <p id="confirm-modal-text" style="color:var(--ink-dim); font-size:.9rem; margin-bottom:6px;"></p>
+    <div class="modal-box__actions">
+      <button type="button" class="modal-box__cancel" id="confirm-modal-cancel">Annuler</button>
+      <button type="button" class="modal-box__save" id="confirm-modal-ok" style="background:#e8743b; color:#1a1305;">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<script src="api-client.js"></script>
+<script src="auth.js"></script>
+<script src="profile-photo.js"></script>
+<script src="content-store.js"></script>
+<script src="pricing.js"></script>
+<script src="email-service.js"></script>
+<script src="messenger-store.js"></script>
+<script src="notifications-store.js"></script>
+<script src="testimonials-store.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
